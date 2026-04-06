@@ -4,6 +4,9 @@ The simplest way for kids to create, arrange, and print photo collages.
 
 KIDS PHOTO PRINTING STUDIO is a lightweight, open-source Windows application designed specifically for children. Unlike Word or Photoshop, which can be frustrating with hidden layers and text-wrapping rules, this app provides a pure "blank paper" canvas.
 
+<img width="1919" height="739" alt="app-screenshot" src="https://github.com/user-attachments/assets/7aafbb9f-e5af-448c-af03-12e80c74239b" />
+
+
 Kids can drag, drop, and arrange photos with zero technical friction.
 
 🚀 Key Features
