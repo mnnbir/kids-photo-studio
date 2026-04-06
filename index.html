@@ -3,47 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kids Photo Printing Studio</title>
+    <title>Kids Photo Printing Studio | Download</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            background-color: #f0f8ff;
-            color: #333;
-            padding: 50px;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .container {
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 900px;
+            width: 90%;
+            margin: 50px 0;
             background: white;
             padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        h1 { color: #2196F3; font-size: 3em; margin-bottom: 10px; }
-        p { font-size: 1.2em; line-height: 1.6; color: #555; }
+        h1 {
+            color: #1a73e8;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+        }
+        p.subtitle {
+            font-size: 1.2em;
+            color: #5f6368;
+            margin-bottom: 30px;
+        }
+        
+        /* Screenshot Styling */
+        .screenshot-container {
+            margin: 30px 0;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border: 4px solid #fff;
+        }
+        .screenshot-container img {
+            width: 100%;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        .screenshot-container:hover img {
+            transform: scale(1.02);
+        }
+
         .download-btn {
             display: inline-block;
-            margin-top: 30px;
-            padding: 20px 40px;
+            background-color: #34a853;
+            color: white;
+            padding: 20px 50px;
             font-size: 1.5em;
             font-weight: bold;
-            color: white;
-            background-color: #4CAF50;
             text-decoration: none;
             border-radius: 50px;
-            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 15px rgba(52, 168, 83, 0.3);
+            transition: all 0.2s;
+            margin: 20px 0;
         }
         .download-btn:hover {
-            background-color: #45a049;
-            transform: scale(1.05);
+            background-color: #2d8e47;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4);
         }
-        .features {
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
             text-align: left;
             margin-top: 40px;
-            background: #f9f9f9;
+        }
+        .feature-card {
+            background: #f8f9fa;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 15px;
+            border-left: 5px solid #1a73e8;
+        }
+        .feature-card h3 {
+            margin-top: 0;
+            color: #1a73e8;
+        }
+        footer {
+            margin-bottom: 50px;
+            color: #9aa0a6;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -51,20 +101,43 @@
 
 <div class="container">
     <h1>🎨 Kids Photo Printing Studio</h1>
-    <p>A dead-simple, kid-proof desktop app that lets children drag, drop, and print photos without fighting complicated software.</p>
+    <p class="subtitle">The simplest, safest way for kids to create and print photo collages on Windows.</p>
     
-    <a href="https://github.com/YOUR_NAME/kids-photo-studio/releases/download/v1.0.0/kids_studio.exe" class="download-btn">⬇️ Download for Windows</a>
+    <!-- APP SCREENSHOT -->
+    <div class="screenshot-container">
+        <!-- Make sure you have an image named 'app-screenshot.png' in your GitHub repo! -->
+        <img src="app-screenshot.png" alt="Kids Photo Printing Studio Screenshot" onerror="this.src='https://via.placeholder.com/800x450?text=App+Screenshot+Loading...'">
+    </div>
 
-    <div class="features">
-        <h3>✨ Why Parents Love It:</h3>
-        <ul>
-            <li><strong>Kid-Proof UI:</strong> Impossible to break, with massive buttons.</li>
-            <li><strong>Drag & Drop:</strong> Works with JPG, PNG, WEBP, and even iPhone HEIC files!</li>
-            <li><strong>Unlimited Undo:</strong> Mistakes vanish with the click of a button.</li>
-            <li><strong>100% Free & Offline:</strong> No ads, no subscriptions, no internet required.</li>
-        </ul>
+    <!-- DOWNLOAD BUTTON -->
+    <!-- Replace 'YOUR_USERNAME' with your actual GitHub username -->
+    <a href="https://github.com/YOUR_USERNAME/kids-photo-studio/releases/latest/download/kids_studio.exe" class="download-btn">
+        ⬇️ Download for Windows
+    </a>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3>🖼️ Easy Drag & Drop</h3>
+            <p>Grab photos from your folders or paste from Google. It even works with iPhone (HEIC) photos!</p>
+        </div>
+        <div class="feature-card">
+            <h3>✂️ Visual Tools</h3>
+            <p>Rotate, Resize, and Crop photos with big, colorful buttons designed for small hands.</p>
+        </div>
+        <div class="feature-card">
+            <h3>↩️ Infinite Undo</h3>
+            <p>Made a mistake? Just hit Undo or press Ctrl+Z. Nothing is ever lost!</p>
+        </div>
+        <div class="feature-card">
+            <h3>🔒 Safe & Offline</h3>
+            <p>100% Free. No ads. No internet required. Your photos stay private on your computer.</p>
+        </div>
     </div>
 </div>
+
+<footer>
+    Open Source Project &copy; 2026 | Built for Kids everywhere.
+</footer>
 
 </body>
 </html>
