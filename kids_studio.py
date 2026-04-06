@@ -5,42 +5,55 @@ from PyQt6.QtWidgets import (QApplication, QGraphicsView, QGraphicsScene,
                              QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, 
                              QGraphicsPixmapItem, QGraphicsItem, QStyle, QGraphicsRectItem)
 from PyQt6.QtGui import QPixmap, QClipboard, QPainter, QPen, QColor, QBrush, QTransform, QIcon
-from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
+from PyQt6.QtCore import Qt, QRectF, QPointF
 
 # --- 1. The Custom Image Logic ---
 class DraggableImage(QGraphicsPixmapItem):
     def __init__(self, pixmap):
         super().__init__(pixmap)
+        
         self.setAcceptHoverEvents(True) 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setTransformOriginPoint(self.boundingRect().center())
         
+        # State variables
         self.resizing = False
         self.hover_corner = False
         self.cropping_mode = False
         self.crop_start = None
         self.crop_end = None
+        
+        # Cloning variables
+        self.cloning_mode = False
+        self.clone_item = None
+        self.start_scene_pos = None
+        self.original_item_pos = None
 
     def rotate_90(self):
+        """Spins the image 90 degrees."""
         transform = QTransform().rotate(90)
         new_pixmap = self.pixmap().transformed(transform, Qt.TransformationMode.SmoothTransformation)
         center_scene = self.mapToScene(self.boundingRect().center())
+        
         self.setPixmap(new_pixmap)
         self.setTransformOriginPoint(self.boundingRect().center())
+        
         new_center_scene = self.mapToScene(self.boundingRect().center())
         offset = center_scene - new_center_scene
         self.setPos(self.pos() + offset)
 
     def hoverMoveEvent(self, event):
+        """Handles cursor changes for resizing."""
         if not self.isSelected() or self.cropping_mode:
             self.setCursor(Qt.CursorShape.ArrowCursor)
             super().hoverMoveEvent(event)
             return
+
         pos = event.pos()
         rect = self.boundingRect()
         m = 40.0 / self.scale() if self.scale() > 0 else 40.0
+
         if (pos.x() < rect.left() + m and pos.y() < rect.top() + m) or \
            (pos.x() > rect.right() - m and pos.y() > rect.bottom() - m):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
@@ -52,30 +65,73 @@ class DraggableImage(QGraphicsPixmapItem):
         else:
             self.setCursor(Qt.CursorShape.ArrowCursor)
             self.hover_corner = False
+            
         super().hoverMoveEvent(event)
 
     def mousePressEvent(self, event):
-        try:
-            self.scene().views()[0].main_window.save_state()
+        """Detects Ctrl key for cloning or regular movement."""
+        # Check for CTRL + Drag (Cloning)
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier and not self.cropping_mode:
+            try: self.scene().views()[0].main_window.save_state()
+            except: pass
+
+            self.cloning_mode = True
+            self.start_scene_pos = event.scenePos()
+            self.original_item_pos = self.pos()
+            
+            # Create the clone
+            self.clone_item = DraggableImage(self.pixmap())
+            self.clone_item.setScale(self.scale())
+            self.clone_item.setRotation(self.rotation())
+            self.scene().addItem(self.clone_item)
+            self.clone_item.setPos(self.original_item_pos)
+            
+            # Lock the original in place while we drag the new one
+            self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+            return
+
+        # Regular Click Logic
+        try: self.scene().views()[0].main_window.save_state()
         except: pass
+
         if self.cropping_mode:
             self.crop_start = event.pos()
             self.crop_end = event.pos()
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
             return
+
         if getattr(self, 'hover_corner', False) and self.isSelected():
             self.resizing = True
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
             self.start_scale = self.scale()
             self.start_mouse_pos = event.scenePos()
-        else: self.resizing = False
+        else:
+            self.resizing = False
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        """Handles straight-line cloning and resizing."""
+        if self.cloning_mode and self.clone_item:
+            current_mouse_pos = event.scenePos()
+            diff = current_mouse_pos - self.start_scene_pos
+            
+            dx = diff.x()
+            dy = diff.y()
+            
+            # Snap to straight line (Axis locking)
+            if abs(dx) > abs(dy):
+                # Horizontal Move
+                self.clone_item.setPos(self.original_item_pos.x() + dx, self.original_item_pos.y())
+            else:
+                # Vertical Move
+                self.clone_item.setPos(self.original_item_pos.x(), self.original_item_pos.y() + dy)
+            return
+
         if self.cropping_mode and self.crop_start:
             self.crop_end = event.pos()
             self.update()
             return
+
         if self.resizing:
             center_scene_pos = self.mapToScene(self.transformOriginPoint())
             def calc_dist(p1, p2): return math.hypot(p1.x() - p2.x(), p1.y() - p2.y())
@@ -85,9 +141,17 @@ class DraggableImage(QGraphicsPixmapItem):
                 scale_ratio = current_dist / start_dist
                 new_scale = self.start_scale * scale_ratio
                 if new_scale > 0.05: self.setScale(new_scale)
-        else: super().mouseMoveEvent(event)
+        else:
+            super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        """Finishes resizing, cropping, or cloning."""
+        if self.cloning_mode:
+            self.cloning_mode = False
+            self.clone_item = None
+            self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+            return
+
         if self.cropping_mode and self.crop_start:
             self.crop_end = event.pos()
             rect = QRectF(self.crop_start, self.crop_end).normalized()
@@ -104,6 +168,7 @@ class DraggableImage(QGraphicsPixmapItem):
                 if hasattr(view.main_window, 'reset_crop_button'): view.main_window.reset_crop_button()
             self.update()
             return
+
         if self.resizing:
             self.resizing = False
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
@@ -129,6 +194,7 @@ class DraggableImage(QGraphicsPixmapItem):
             painter.setPen(QPen(Qt.GlobalColor.red, max(3.0 / self.scale(), 1.0), Qt.PenStyle.SolidLine))
             painter.setBrush(QColor(255, 0, 0, 80)) 
             painter.drawRect(rect)
+
 
 # --- 2. The Custom Interactive View ---
 class CanvasView(QGraphicsView):
@@ -170,10 +236,7 @@ class A4PrintStudio(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("KIDS PHOTO PRINTING STUDIO")
-        
-        # Load the custom icon if it exists
-        if os.path.exists("app_icon.ico"):
-            self.setWindowIcon(QIcon("app_icon.ico"))
+        if os.path.exists("app_icon.ico"): self.setWindowIcon(QIcon("app_icon.ico"))
 
         self.undo_stack = []
         self.scene = QGraphicsScene()
@@ -199,10 +262,15 @@ class A4PrintStudio(QMainWindow):
         self.paste_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #4CAF50; color: white; border-radius: 8px;")
         self.paste_btn.clicked.connect(self.paste_image)
 
+        self.reset_btn = QPushButton("🧹 RESET")
+        self.reset_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #9E9E9E; color: white; border-radius: 8px;")
+        self.reset_btn.clicked.connect(self.reset_canvas)
+
         self.print_btn = QPushButton("🖨️ PRINT")
         self.print_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #2196F3; color: white; border-radius: 8px;")
         self.print_btn.clicked.connect(self.print_canvas)
 
+        # Contextual Tools
         self.delete_btn = QPushButton("🗑️ DELETE")
         self.delete_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #f44336; color: white; border-radius: 8px;")
         self.delete_btn.clicked.connect(self.delete_selected)
@@ -220,6 +288,7 @@ class A4PrintStudio(QMainWindow):
 
         button_layout.addWidget(self.undo_btn)
         button_layout.addWidget(self.paste_btn)
+        button_layout.addWidget(self.reset_btn)
         button_layout.addWidget(self.print_btn)
         button_layout.addStretch() 
         button_layout.addWidget(self.delete_btn)
@@ -239,13 +308,13 @@ class A4PrintStudio(QMainWindow):
         state = []
         for item in self.scene.items():
             if isinstance(item, DraggableImage):
-                state.append({'pixmap': item.pixmap(), 'pos': item.pos(), 'scale': item.scale()})
+                state.append({'pixmap': item.pixmap(), 'pos': item.pos(), 'scale': item.scale(), 'rot': item.rotation()})
         return state
 
     def states_are_equal(self, s1, s2):
         if len(s1) != len(s2): return False
         for a, b in zip(s1, s2):
-            if a['pixmap'].cacheKey() != b['pixmap'].cacheKey() or a['pos'] != b['pos'] or a['scale'] != b['scale']: return False
+            if a['pixmap'].cacheKey() != b['pixmap'].cacheKey() or a['pos'] != b['pos'] or a['scale'] != b['scale'] or a['rot'] != b['rot']: return False
         return True
 
     def save_state(self):
@@ -270,9 +339,20 @@ class A4PrintStudio(QMainWindow):
                 it = DraggableImage(d['pixmap'])
                 it.setPos(d['pos'])
                 it.setScale(d['scale'])
+                it.setRotation(d['rot'])
                 self.scene.addItem(it)
         if not self.undo_stack: self.undo_btn.setVisible(False)
         self.scene.clearSelection()
+
+    def reset_canvas(self):
+        """Clears everything off the paper."""
+        if not any(isinstance(i, DraggableImage) for i in self.scene.items()):
+            return
+        self.save_state()
+        for i in self.scene.items():
+            if isinstance(i, DraggableImage):
+                self.scene.removeItem(i)
+        self.on_selection_changed()
 
     def on_selection_changed(self):
         has = len(self.scene.selectedItems()) > 0
