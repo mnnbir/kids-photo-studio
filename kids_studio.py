@@ -4,7 +4,7 @@ import os
 from PyQt6.QtWidgets import (QApplication, QGraphicsView, QGraphicsScene, 
                              QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, 
                              QGraphicsPixmapItem, QGraphicsItem, QStyle, QGraphicsRectItem)
-from PyQt6.QtGui import QPixmap, QClipboard, QPainter, QPen, QColor, QBrush, QTransform
+from PyQt6.QtGui import QPixmap, QClipboard, QPainter, QPen, QColor, QBrush, QTransform, QIcon
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
 
@@ -12,7 +12,6 @@ from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
 class DraggableImage(QGraphicsPixmapItem):
     def __init__(self, pixmap):
         super().__init__(pixmap)
-        
         self.setAcceptHoverEvents(True) 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
@@ -25,29 +24,23 @@ class DraggableImage(QGraphicsPixmapItem):
         self.crop_end = None
 
     def rotate_90(self):
-        """Spins the image 90 degrees while keeping it centered."""
         transform = QTransform().rotate(90)
         new_pixmap = self.pixmap().transformed(transform, Qt.TransformationMode.SmoothTransformation)
         center_scene = self.mapToScene(self.boundingRect().center())
-        
         self.setPixmap(new_pixmap)
         self.setTransformOriginPoint(self.boundingRect().center())
-        
         new_center_scene = self.mapToScene(self.boundingRect().center())
         offset = center_scene - new_center_scene
         self.setPos(self.pos() + offset)
 
     def hoverMoveEvent(self, event):
-        """Changes the mouse cursor when hovering over corners for resizing."""
         if not self.isSelected() or self.cropping_mode:
             self.setCursor(Qt.CursorShape.ArrowCursor)
             super().hoverMoveEvent(event)
             return
-
         pos = event.pos()
         rect = self.boundingRect()
         m = 40.0 / self.scale() if self.scale() > 0 else 40.0
-
         if (pos.x() < rect.left() + m and pos.y() < rect.top() + m) or \
            (pos.x() > rect.right() - m and pos.y() > rect.bottom() - m):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
@@ -59,29 +52,23 @@ class DraggableImage(QGraphicsPixmapItem):
         else:
             self.setCursor(Qt.CursorShape.ArrowCursor)
             self.hover_corner = False
-            
         super().hoverMoveEvent(event)
 
     def mousePressEvent(self, event):
-        """Saves the current state for Undo before any change happens."""
         try:
             self.scene().views()[0].main_window.save_state()
-        except Exception:
-            pass
-
+        except: pass
         if self.cropping_mode:
             self.crop_start = event.pos()
             self.crop_end = event.pos()
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
             return
-
         if getattr(self, 'hover_corner', False) and self.isSelected():
             self.resizing = True
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
             self.start_scale = self.scale()
             self.start_mouse_pos = event.scenePos()
-        else:
-            self.resizing = False
+        else: self.resizing = False
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -89,45 +76,34 @@ class DraggableImage(QGraphicsPixmapItem):
             self.crop_end = event.pos()
             self.update()
             return
-
         if self.resizing:
             center_scene_pos = self.mapToScene(self.transformOriginPoint())
-            def calc_dist(p1, p2):
-                return math.hypot(p1.x() - p2.x(), p1.y() - p2.y())
+            def calc_dist(p1, p2): return math.hypot(p1.x() - p2.x(), p1.y() - p2.y())
             current_dist = calc_dist(event.scenePos(), center_scene_pos)
             start_dist = calc_dist(self.start_mouse_pos, center_scene_pos)
-            
             if start_dist > 0:
                 scale_ratio = current_dist / start_dist
                 new_scale = self.start_scale * scale_ratio
-                if new_scale > 0.05: 
-                    self.setScale(new_scale)
-        else:
-            super().mouseMoveEvent(event)
+                if new_scale > 0.05: self.setScale(new_scale)
+        else: super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if self.cropping_mode and self.crop_start:
             self.crop_end = event.pos()
             rect = QRectF(self.crop_start, self.crop_end).normalized()
-            
             if rect.width() > 10 and rect.height() > 10:
                 top_left_scene = self.mapToScene(rect.topLeft())
                 cropped_pixmap = self.pixmap().copy(rect.toRect())
                 self.setPixmap(cropped_pixmap)
                 self.setPos(top_left_scene)
                 self.setTransformOriginPoint(self.boundingRect().center())
-            
-            self.crop_start = None
-            self.crop_end = None
+            self.crop_start = self.crop_end = None
             self.cropping_mode = False
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-            
             for view in self.scene().views():
-                if hasattr(view.main_window, 'reset_crop_button'):
-                    view.main_window.reset_crop_button()
+                if hasattr(view.main_window, 'reset_crop_button'): view.main_window.reset_crop_button()
             self.update()
             return
-
         if self.resizing:
             self.resizing = False
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
@@ -136,14 +112,11 @@ class DraggableImage(QGraphicsPixmapItem):
     def paint(self, painter, option, widget):
         option.state &= ~QStyle.StateFlag.State_Selected 
         super().paint(painter, option, widget)
-        
-        # Blue resize handles
         if self.isSelected() and not self.cropping_mode:
             pen = QPen(Qt.GlobalColor.blue, max(3.0 / self.scale(), 1.0), Qt.PenStyle.DashLine)
             painter.setPen(pen)
             rect = self.boundingRect()
             painter.drawRect(rect)
-            
             hs = max(30.0 / self.scale(), 5.0) 
             painter.setBrush(Qt.GlobalColor.blue)
             painter.setPen(Qt.PenStyle.NoPen)
@@ -151,14 +124,11 @@ class DraggableImage(QGraphicsPixmapItem):
             painter.drawRect(QRectF(rect.right() - hs, rect.top(), hs, hs))
             painter.drawRect(QRectF(rect.left(), rect.bottom() - hs, hs, hs))
             painter.drawRect(QRectF(rect.right() - hs, rect.bottom() - hs, hs, hs))
-
-        # Red crop overlay
         if self.cropping_mode and self.crop_start and self.crop_end:
             rect = QRectF(self.crop_start, self.crop_end).normalized()
             painter.setPen(QPen(Qt.GlobalColor.red, max(3.0 / self.scale(), 1.0), Qt.PenStyle.SolidLine))
             painter.setBrush(QColor(255, 0, 0, 80)) 
             painter.drawRect(rect)
-
 
 # --- 2. The Custom Interactive View ---
 class CanvasView(QGraphicsView):
@@ -169,59 +139,45 @@ class CanvasView(QGraphicsView):
         self.setStyleSheet("background-color: #2b2b2b; border: none;")
 
     def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-        else:
-            super().dragEnterEvent(event)
+        if event.mimeData().hasUrls(): event.acceptProposedAction()
+        else: super().dragEnterEvent(event)
 
     def dragMoveEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-        else:
-            super().dragMoveEvent(event)
+        if event.mimeData().hasUrls(): event.acceptProposedAction()
+        else: super().dragMoveEvent(event)
 
     def dropEvent(self, event):
         if event.mimeData().hasUrls():
             self.main_window.save_state()
             drop_point = self.mapToScene(event.position().toPoint())
-            
             for url in event.mimeData().urls():
                 file_path = url.toLocalFile()
-                valid_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff', '.tif', '.avif', '.heic', '.heif')
-                
-                if file_path.lower().endswith(valid_extensions):
+                valid_exts = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff', '.tif', '.avif', '.heic', '.heif')
+                if file_path.lower().endswith(valid_exts):
                     pixmap = QPixmap(file_path)
                     if not pixmap.isNull():
-                        # Auto-shrink massive 4K photos
                         if pixmap.width() > 500 or pixmap.height() > 500:
                             pixmap = pixmap.scaled(500, 500, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                        
                         item = DraggableImage(pixmap)
                         self.scene().addItem(item)
-                        
-                        # Place exactly where the mouse let go
-                        x_pos = drop_point.x() - (pixmap.width() / 2)
-                        y_pos = drop_point.y() - (pixmap.height() / 2)
-                        item.setPos(x_pos, y_pos)
-                        
-                        # Cascade multiple drops
+                        item.setPos(drop_point.x() - (pixmap.width() / 2), drop_point.y() - (pixmap.height() / 2))
                         drop_point.setX(drop_point.x() + 30)
                         drop_point.setY(drop_point.y() + 30)
             event.acceptProposedAction()
-
 
 # --- 3. The Main Application Window ---
 class A4PrintStudio(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("KIDS PHOTO PRINTING STUDIO")
+        
+        # Load the custom icon if it exists
+        if os.path.exists("app_icon.ico"):
+            self.setWindowIcon(QIcon("app_icon.ico"))
 
         self.undo_stack = []
-
         self.scene = QGraphicsScene()
-        self.scene.setSceneRect(0, 0, 794, 1123) # Standard A4 Portrait Pixels
-
-        # The physical white paper
+        self.scene.setSceneRect(0, 0, 794, 1123) 
         self.paper = QGraphicsRectItem(0, 0, 794, 1123)
         self.paper.setBrush(QBrush(Qt.GlobalColor.white))
         self.paper.setPen(QPen(Qt.PenStyle.NoPen))
@@ -230,7 +186,6 @@ class A4PrintStudio(QMainWindow):
         self.view = CanvasView(self.scene, self)
         self.scene.selectionChanged.connect(self.on_selection_changed)
         
-        # --- UI LAYOUT ---
         button_layout = QHBoxLayout()
         button_layout.setSpacing(10)
         button_layout.setContentsMargins(10, 10, 10, 10)
@@ -275,98 +230,86 @@ class A4PrintStudio(QMainWindow):
         layout.addLayout(button_layout)
         layout.addWidget(self.view)
         layout.setContentsMargins(0,0,0,0) 
-
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
         self.showMaximized()
 
-    # --- UNDO SYSTEM ---
     def get_scene_state(self):
         state = []
         for item in self.scene.items():
             if isinstance(item, DraggableImage):
-                state.append({
-                    'pixmap': item.pixmap(),
-                    'pos': item.pos(),
-                    'scale': item.scale()
-                })
+                state.append({'pixmap': item.pixmap(), 'pos': item.pos(), 'scale': item.scale()})
         return state
 
-    def states_are_equal(self, state1, state2):
-        if len(state1) != len(state2): return False
-        for s1, s2 in zip(state1, state2):
-            if s1['pixmap'].cacheKey() != s2['pixmap'].cacheKey(): return False
-            if s1['pos'] != s2['pos']: return False
-            if s1['scale'] != s2['scale']: return False
+    def states_are_equal(self, s1, s2):
+        if len(s1) != len(s2): return False
+        for a, b in zip(s1, s2):
+            if a['pixmap'].cacheKey() != b['pixmap'].cacheKey() or a['pos'] != b['pos'] or a['scale'] != b['scale']: return False
         return True
 
     def save_state(self):
         new_state = self.get_scene_state()
-        if self.undo_stack and self.states_are_equal(self.undo_stack[-1], new_state):
-            return
+        if self.undo_stack and self.states_are_equal(self.undo_stack[-1], new_state): return
         self.undo_stack.append(new_state)
         self.undo_btn.setVisible(True)
 
     def undo(self):
         if not self.undo_stack: return
-        current_state = self.get_scene_state()
-        state_to_restore = None
+        curr = self.get_scene_state()
+        rest = None
         while self.undo_stack:
             prev = self.undo_stack.pop()
-            if not self.states_are_equal(current_state, prev):
-                state_to_restore = prev
+            if not self.states_are_equal(curr, prev):
+                rest = prev
                 break
-        if state_to_restore is not None:
-            for item in self.scene.items():
-                if isinstance(item, DraggableImage): self.scene.removeItem(item)
-            for data in reversed(state_to_restore):
-                item = DraggableImage(data['pixmap'])
-                item.setPos(data['pos'])
-                item.setScale(data['scale'])
-                self.scene.addItem(item)
+        if rest:
+            for i in self.scene.items():
+                if isinstance(i, DraggableImage): self.scene.removeItem(i)
+            for d in reversed(rest):
+                it = DraggableImage(d['pixmap'])
+                it.setPos(d['pos'])
+                it.setScale(d['scale'])
+                self.scene.addItem(it)
         if not self.undo_stack: self.undo_btn.setVisible(False)
         self.scene.clearSelection()
 
-    # --- Contextual Logic ---
     def on_selection_changed(self):
-        has_selection = len(self.scene.selectedItems()) > 0
-        self.delete_btn.setVisible(has_selection)
-        self.rotate_btn.setVisible(has_selection)
-        self.crop_btn.setVisible(has_selection)
-        if not has_selection:
-            for item in self.scene.items():
-                if isinstance(item, DraggableImage): item.cropping_mode = False
+        has = len(self.scene.selectedItems()) > 0
+        self.delete_btn.setVisible(has)
+        self.rotate_btn.setVisible(has)
+        self.crop_btn.setVisible(has)
+        if not has:
+            for i in self.scene.items():
+                if isinstance(i, DraggableImage): i.cropping_mode = False
             self.reset_crop_button()
 
     def delete_selected(self):
         self.save_state()
-        for item in self.scene.selectedItems(): self.scene.removeItem(item)
+        for i in self.scene.selectedItems(): self.scene.removeItem(i)
 
     def rotate_selected(self):
         self.save_state()
-        for item in self.scene.selectedItems():
-            if isinstance(item, DraggableImage): item.rotate_90()
+        for i in self.scene.selectedItems():
+            if isinstance(i, DraggableImage): i.rotate_90()
 
     def toggle_crop_mode(self):
-        for item in self.scene.selectedItems():
-            if isinstance(item, DraggableImage):
-                item.cropping_mode = not item.cropping_mode
-                if item.cropping_mode:
-                    self.crop_btn.setText("🟩 DRAW A BOX ON PHOTO TO CROP")
+        for i in self.scene.selectedItems():
+            if isinstance(i, DraggableImage):
+                i.cropping_mode = not i.cropping_mode
+                if i.cropping_mode:
+                    self.crop_btn.setText("🟩 DRAW BOX ON PHOTO TO CROP")
                     self.crop_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #E91E63; color: white; border-radius: 8px;")
                 else: self.reset_crop_button()
-                item.update()
+                i.update()
 
     def reset_crop_button(self):
         self.crop_btn.setText("✂️ CROP")
         self.crop_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #9C27B0; color: white; border-radius: 8px;")
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Delete or event.key() == Qt.Key.Key_Backspace:
-            self.delete_selected()
-        elif event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_Z:
-            self.undo()
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace): self.delete_selected()
+        elif event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_Z: self.undo()
         super().keyPressEvent(event)
 
     def resizeEvent(self, event):
@@ -374,30 +317,25 @@ class A4PrintStudio(QMainWindow):
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
     def paste_image(self):
-        clipboard = QApplication.clipboard()
-        mime_data = clipboard.mimeData()
-        if mime_data.hasImage():
+        clip = QApplication.clipboard()
+        mime = clip.mimeData()
+        if mime.hasImage():
             self.save_state() 
-            image = clipboard.image()
-            pixmap = QPixmap.fromImage(image)
-            if pixmap.width() > 500 or pixmap.height() > 500:
-                pixmap = pixmap.scaled(500, 500, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            item = DraggableImage(pixmap)
-            self.scene.addItem(item)
-            x_pos = (794 / 2) - (pixmap.width() / 2)
-            y_pos = (1123 / 2) - (pixmap.height() / 2)
-            item.setPos(x_pos, y_pos)
+            px = QPixmap.fromImage(clip.image())
+            if px.width() > 500 or px.height() > 500:
+                px = px.scaled(500, 500, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            it = DraggableImage(px)
+            self.scene.addItem(it)
+            it.setPos((794 / 2) - (px.width() / 2), (1123 / 2) - (px.height() / 2))
 
     def print_canvas(self):
         self.scene.clearSelection() 
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        dialog = QPrintDialog(printer, self)
-        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
-            painter = QPainter(printer)
-            target_rect = QRectF(0, 0, printer.pageLayout().paintRectPixels(printer.resolution()).width(), printer.pageLayout().paintRectPixels(printer.resolution()).height())
-            source_rect = QRectF(0, 0, 794, 1123)
-            self.scene.render(painter, target_rect, source_rect)
-            painter.end()
+        prn = QPrinter(QPrinter.PrinterMode.HighResolution)
+        if QPrintDialog(prn, self).exec() == QPrintDialog.DialogCode.Accepted:
+            pnt = QPainter(prn)
+            tr = QRectF(0, 0, prn.pageLayout().paintRectPixels(prn.resolution()).width(), prn.pageLayout().paintRectPixels(prn.resolution()).height())
+            self.scene.render(pnt, tr, QRectF(0, 0, 794, 1123))
+            pnt.end()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
