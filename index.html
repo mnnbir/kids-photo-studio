@@ -54,23 +54,49 @@
             transform: scale(1.02);
         }
 
+        /* Button Container */
+        .cta-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
         .download-btn {
             display: inline-block;
             background-color: #34a853;
             color: white;
-            padding: 20px 50px;
-            font-size: 1.5em;
+            padding: 18px 40px;
+            font-size: 1.3em;
             font-weight: bold;
             text-decoration: none;
             border-radius: 50px;
             box-shadow: 0 4px 15px rgba(52, 168, 83, 0.3);
             transition: all 0.2s;
-            margin: 20px 0;
         }
         .download-btn:hover {
             background-color: #2d8e47;
             transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4);
+        }
+
+        .github-btn {
+            display: inline-block;
+            background-color: #24292e;
+            color: white;
+            padding: 18px 40px;
+            font-size: 1.3em;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
+        .github-btn:hover {
+            background-color: #444;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
         .features-grid {
@@ -90,10 +116,18 @@
             margin-top: 0;
             color: #1a73e8;
         }
+        .feature-card.github {
+            border-left-color: #24292e;
+            background-color: #f1f3f4;
+        }
         footer {
             margin-bottom: 50px;
             color: #9aa0a6;
             font-size: 0.9em;
+        }
+        footer a {
+            color: #1a73e8;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -105,15 +139,20 @@
     
     <!-- APP SCREENSHOT -->
     <div class="screenshot-container">
-        <!-- Make sure you have an image named 'app-screenshot.png' in your GitHub repo! -->
         <img src="app-screenshot.png" alt="Kids Photo Printing Studio Screenshot" onerror="this.src='https://via.placeholder.com/800x450?text=App+Screenshot+Loading...'">
     </div>
 
-    <!-- DOWNLOAD BUTTON -->
-    <!-- Replace 'YOUR_USERNAME' with your actual GitHub username -->
-    <a href="https://github.com/mnnbir/kids-photo-studio/releases/download/v1.0.0/kids_studio.exe" class="download-btn">
-        ⬇️ Download for Windows
-    </a>
+    <!-- ACTION BUTTONS -->
+    <div class="cta-group">
+        <!-- Replace 'YOUR_USERNAME' with your actual GitHub username -->
+        <a href="https://github.com/YOUR_USERNAME/kids-photo-studio/releases/latest/download/kids_studio.exe" class="download-btn">
+            ⬇️ Download for Windows
+        </a>
+        
+        <a href="https://github.com/YOUR_USERNAME/kids-photo-studio" class="github-btn">
+            🐙 View on GitHub
+        </a>
+    </div>
 
     <div class="features-grid">
         <div class="feature-card">
@@ -128,15 +167,16 @@
             <h3>↩️ Infinite Undo</h3>
             <p>Made a mistake? Just hit Undo or press Ctrl+Z. Nothing is ever lost!</p>
         </div>
-        <div class="feature-card">
-            <h3>🔒 Safe & Offline</h3>
-            <p>100% Free. No ads. No internet required. Your photos stay private on your computer.</p>
+        <div class="feature-card github">
+            <h3>🚀 Open Source</h3>
+            <p>This software is 100% open source. Developers can contribute new features or audit the code on GitHub.</p>
         </div>
     </div>
 </div>
 
 <footer>
-    Open Source Project &copy; 2026 | Built for Kids everywhere.
+    Project by <a href="https://github.com/YOUR_USERNAME">YOUR_USERNAME</a> &copy; 2026 | 
+    <a href="https://github.com/YOUR_USERNAME/kids-photo-studio">Source Code</a>
 </footer>
 
 </body>
