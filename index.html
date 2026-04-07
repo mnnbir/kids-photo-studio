@@ -160,6 +160,7 @@
     <div class="left-column">
         <div class="toolbar">
             <button class="btn btn-win" style="width: auto;" onclick="document.getElementById('fileInput').click()">📁 ADD PHOTO</button>
+            <button class="btn" style="background: #4CAF50; color: white; width: auto;" onclick="pasteImage()">📋 PASTE</button>
             <button class="btn" style="background: #607d8b; color: white; width: auto;" onclick="undo()">↩️ UNDO</button>
             <button class="btn" style="background: #9e9e9e; color: white; width: auto;" onclick="clearCanvas()">🧹 RESET</button>
             
@@ -687,6 +688,52 @@
         if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
         else if (e.ctrlKey && e.key === 'z') undo();
     });
+
+    // --- Clipboard Paste Support via Keyboard (Ctrl+V) ---
+    window.addEventListener('paste', (e) => {
+        if (!e.clipboardData || !e.clipboardData.items) return;
+        
+        const items = e.clipboardData.items;
+        const filesToPaste = [];
+        
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image/') !== -1) {
+                const blob = items[i].getAsFile();
+                if (blob) filesToPaste.push(blob);
+            }
+        }
+        
+        if (filesToPaste.length > 0) {
+            e.preventDefault(); // Prevent default browser paste behaviors
+            handleFiles(filesToPaste);
+        }
+    });
+
+    // --- PASTE Button Support via Clipboard API ---
+    async function pasteImage() {
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            const filesToPaste = [];
+            
+            for (const clipboardItem of clipboardItems) {
+                for (const type of clipboardItem.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await clipboardItem.getType(type);
+                        filesToPaste.push(blob);
+                    }
+                }
+            }
+            
+            if (filesToPaste.length > 0) {
+                handleFiles(filesToPaste);
+            } else {
+                alert("No image found in your clipboard! Try copying an image first.");
+            }
+        } catch (err) {
+            console.error("Failed to read clipboard:", err);
+            alert("Clipboard access blocked. Please make sure you granted permissions, or simply press Ctrl+V / Cmd+V to paste.");
+        }
+    }
 
     // --- Toolbar Tools ---
     function rotateSelected() {
