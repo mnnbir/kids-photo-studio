@@ -777,6 +777,30 @@
         }
     });
 
+    // --- Click Outside to Deselect ---
+    document.addEventListener('mousedown', (e) => {
+        // Check if the user clicked outside the canvas AND outside the interactive toolbar
+        if (e.target !== canvas && !e.target.closest('.toolbar')) {
+            let needsRender = false;
+            
+            if (croppingMode) {
+                croppingMode = false;
+                const btn = document.getElementById('cropBtn');
+                btn.innerHTML = "✂️ CROP";
+                btn.style.background = "#9c27b0";
+                activeCropHandle = null;
+                needsRender = true;
+            }
+            
+            if (selectedGroup.length > 0) {
+                selectedGroup = [];
+                needsRender = true;
+            }
+            
+            if (needsRender) render();
+        }
+    });
+
     // --- PASTE Button Support via Clipboard API ---
     async function pasteImage() {
         try {
