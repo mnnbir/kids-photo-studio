@@ -565,10 +565,11 @@
                 dragOffsets = selectedGroup.map(img => ({ img: img, offsetX: mx - img.x, offsetY: my - img.y }));
             }
         } else {
-            // Start Marquee Selection
+            // Start Marquee Selection (Clicking Blank Space)
             if (croppingMode) toggleCrop();
             selectedGroup = [];
             marquee = { x: mx, y: my, w: 0, h: 0 };
+            canvas.style.cursor = "default"; // Ensure cursor drops out of any hover states
         }
         render();
     };
@@ -579,18 +580,22 @@
         const my = (e.clientY - rect.top) * (canvas.height / rect.height);
 
         // Update Cursor
-        if (!isDragging && !isResizing && !activeCropHandle && !marquee && selectedGroup.length === 1) {
-            let img = selectedGroup[0];
-            let local = getLocalCoords(mx, my, img);
-            let m = 20;
-            if (croppingMode) {
-                if (local.x < m || local.x > img.w - m) canvas.style.cursor = "ew-resize";
-                else if (local.y < m || local.y > img.h - m) canvas.style.cursor = "ns-resize";
-                else canvas.style.cursor = "default";
+        if (!isDragging && !isResizing && !activeCropHandle && !marquee) {
+            if (selectedGroup.length === 1) {
+                let img = selectedGroup[0];
+                let local = getLocalCoords(mx, my, img);
+                let m = 20;
+                if (croppingMode) {
+                    if (local.x < m || local.x > img.w - m) canvas.style.cursor = "ew-resize";
+                    else if (local.y < m || local.y > img.h - m) canvas.style.cursor = "ns-resize";
+                    else canvas.style.cursor = "default";
+                } else {
+                    if ((local.x < m || local.x > img.w - m) && (local.y < m || local.y > img.h - m)) canvas.style.cursor = "nwse-resize";
+                    else if (local.x >= 0 && local.x <= img.w && local.y >= 0 && local.y <= img.h) canvas.style.cursor = "move";
+                    else canvas.style.cursor = "default";
+                }
             } else {
-                if ((local.x < m || local.x > img.w - m) && (local.y < m || local.y > img.h - m)) canvas.style.cursor = "nwse-resize";
-                else if (local.x >= 0 && local.x <= img.w && local.y >= 0 && local.y <= img.h) canvas.style.cursor = "move";
-                else canvas.style.cursor = "default";
+                canvas.style.cursor = "default"; // Guarantee default cursor if nothing selected
             }
         }
 
