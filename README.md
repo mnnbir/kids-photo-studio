@@ -1,6 +1,6 @@
 🎨 KIDS PHOTO PRINTING STUDIO
 
-<img width="1880" height="628" alt="image" src="https://github.com/user-attachments/assets/97e8dac9-985f-4492-b520-c6aef3fb817e" />
+<img width="1919" height="693" alt="image" src="https://github.com/user-attachments/assets/d90f0700-e25d-4d9f-9da3-86c8c3f1ec35" />
 
 
 The simplest, most intuitive way for kids to create, save, and print photo collages on Windows and the Web.
