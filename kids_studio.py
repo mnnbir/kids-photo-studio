@@ -196,6 +196,8 @@ class DraggableImage(QGraphicsPixmapItem):
                 # Execute Physical pixel crop
                 phys_rect = QRectF(self.crop_l, self.crop_t, new_w, new_h).toRect()
                 cropped_pixmap = self.pixmap().copy(phys_rect)
+                
+                self.prepareGeometryChange() # <--- Fixes the red remnants!
                 self.setPixmap(cropped_pixmap)
                 
                 # Correct Transform Anchor
@@ -343,10 +345,9 @@ class A4PrintStudio(QMainWindow):
         self.view = CanvasView(self.scene, self)
         self.scene.selectionChanged.connect(self.on_selection_changed)
         
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)
-        button_layout.setContentsMargins(10, 10, 10, 10)
-
+        global_tools_layout = QHBoxLayout()
+        global_tools_layout.setSpacing(10)
+        
         self.add_photo_btn = QPushButton("📁 ADD PHOTO")
         self.add_photo_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #3F51B5; color: white; border-radius: 8px;")
         self.add_photo_btn.clicked.connect(self.add_photo)
@@ -392,20 +393,35 @@ class A4PrintStudio(QMainWindow):
         self.crop_btn.clicked.connect(self.toggle_crop_mode)
         self.crop_btn.setVisible(False)
 
-        button_layout.addWidget(self.add_photo_btn)
-        button_layout.addWidget(self.undo_btn)
-        button_layout.addWidget(self.paste_btn)
-        button_layout.addWidget(self.reset_btn)
-        button_layout.addWidget(self.save_jpg_btn)
-        button_layout.addWidget(self.save_pdf_btn)
-        button_layout.addWidget(self.print_btn)
-        button_layout.addStretch() 
-        button_layout.addWidget(self.delete_btn)
-        button_layout.addWidget(self.rotate_btn)
-        button_layout.addWidget(self.crop_btn)
+        # Row 1: Global Tools
+        global_tools_layout.addWidget(self.add_photo_btn)
+        global_tools_layout.addWidget(self.undo_btn)
+        global_tools_layout.addWidget(self.paste_btn)
+        global_tools_layout.addWidget(self.reset_btn)
+        global_tools_layout.addStretch() 
+        global_tools_layout.addWidget(self.save_jpg_btn)
+        global_tools_layout.addWidget(self.save_pdf_btn)
+        global_tools_layout.addWidget(self.print_btn)
+
+        # Row 2: Contextual Tools (Shows only when an item is selected)
+        self.context_tools_widget = QWidget()
+        context_tools_layout = QHBoxLayout(self.context_tools_widget)
+        context_tools_layout.setContentsMargins(0, 0, 0, 0)
+        context_tools_layout.setSpacing(10)
+        context_tools_layout.addWidget(self.rotate_btn)
+        context_tools_layout.addWidget(self.crop_btn)
+        context_tools_layout.addWidget(self.delete_btn)
+        context_tools_layout.addStretch()
+        self.context_tools_widget.setVisible(False)
+
+        # Combine Toolbar
+        toolbar_layout = QVBoxLayout()
+        toolbar_layout.setContentsMargins(10, 10, 10, 10)
+        toolbar_layout.addLayout(global_tools_layout)
+        toolbar_layout.addWidget(self.context_tools_widget)
 
         layout = QVBoxLayout()
-        layout.addLayout(button_layout)
+        layout.addLayout(toolbar_layout)
         layout.addWidget(self.view)
         layout.setContentsMargins(0,0,0,0) 
         container = QWidget()
@@ -463,6 +479,10 @@ class A4PrintStudio(QMainWindow):
     def on_selection_changed(self):
         selected = self.scene.selectedItems()
         has = len(selected) > 0
+        
+        # Show/Hide the entire second row
+        self.context_tools_widget.setVisible(has)
+        
         self.delete_btn.setVisible(has)
         self.rotate_btn.setVisible(has)
         
