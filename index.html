@@ -106,6 +106,7 @@
             align-items: center;
             height: 100%;
             overflow: hidden;
+            touch-action: none; /* Prevents default browser pinch-zoom and pan on the canvas */
         }
         #canvas-area {
             background: #5f6368;
@@ -222,7 +223,7 @@
             .toolbar { flex-direction: row; flex-wrap: wrap; height: auto; padding: 15px; gap: 10px; }
             .toolbar .btn { flex: 1 1 auto; width: auto; padding: 12px 20px; height: 45px; max-height: none; }
             .toolbar-divider { width: 2px; height: auto; margin: 0; }
-            #canvas-area { height: 80vh; }
+            #canvas-area { height: 80vh; touch-action: none; }
         }
     </style>
 </head>
@@ -283,6 +284,7 @@
                 <li><strong>Marquee Select:</strong> Click and drag empty space to select multiple photos.</li>
                 <li><strong>Pro Tools Built-in:</strong> Use Ctrl+Drag to clone patterns, and drag handles inward on edges to crop!</li>
                 <li><strong>Infinite Undo:</strong> Mistakes are instantly erased with the Undo button or Ctrl+Z.</li>
+                <li><strong>Touch Friendly:</strong> Completely compatible with tablets and mobile phones.</li>
             </ul>
         </div>
         
@@ -394,8 +396,8 @@
                 ctx.strokeStyle = '#e91e63';
                 ctx.lineWidth = 2;
                 
-                let hw = 24, hh = 10; // Horizontal handle width/height
-                let vw = 10, vh = 24; // Vertical handle width/height
+                let hw = 30, hh = 14; // Horizontal handle width/height (slightly larger for touch)
+                let vw = 14, vh = 30; // Vertical handle width/height
 
                 // Top Handle
                 ctx.fillRect(-hw/2, -this.h/2 + this.cropT - hh/2, hw, hh);
@@ -504,18 +506,35 @@
         }
     }
 
-    canvas.onmousedown = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+    // --- Unified Pointer / Touch Event System ---
+    function getPointerPos(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            return { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
+        }
+        return { clientX: e.clientX, clientY: e.clientY };
+    }
+
+    function handlePointerDown(e) {
+        if (e.type === 'touchstart') {
+            e.preventDefault(); // Stop mobile screen from scrolling while tapping the canvas
+        }
         
+        const pos = getPointerPos(e);
+        const rect = canvas.getBoundingClientRect();
+        const mx = (pos.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (pos.clientY - rect.top) * (canvas.height / rect.height);
+        
+        const isCtrl = e.ctrlKey || false; // Safe fallback for touch
+
         // 1. Edge Cropping Check
         if (croppingMode && selectedGroup.length === 1) {
             let img = selectedGroup[0];
             let local = getLocalCoords(mx, my, img);
-            let m = 20; // Keeps generous hit area for kids
+            let m = 30; // Larger hit area for touch fingers
             
-            if (local.x >= 0 && local.x <= img.w && local.y >= 0 && local.y <= img.h) {
+            if (local.x >= -10 && local.x <= img.w + 10 && local.y >= -10 && local.y <= img.h + 10) {
                 if (local.x < m) activeCropHandle = 'left';
                 else if (local.x > img.w - m) activeCropHandle = 'right';
                 else if (local.y < m) activeCropHandle = 'top';
@@ -532,7 +551,7 @@
         if (!croppingMode && selectedGroup.length === 1) {
             let img = selectedGroup[0];
             let local = getLocalCoords(mx, my, img);
-            let m = 20; 
+            let m = 30; // Larger hit area for touch fingers
             if ((local.x < m || local.x > img.w - m) && (local.y < m || local.y > img.h - m)) {
                 saveState();
                 isResizing = true;
@@ -570,7 +589,7 @@
             images.push(clickedImg);
 
             // Group Cloning (Ctrl + Drag)
-            if (e.ctrlKey) {
+            if (isCtrl) {
                 cloningMode = true;
                 let newGroup = [];
                 selectedGroup.forEach(img => {
@@ -593,15 +612,20 @@
             if (croppingMode) toggleCrop();
             selectedGroup = [];
             marquee = { x: mx, y: my, w: 0, h: 0 };
-            canvas.style.cursor = "default"; // Ensure cursor drops out of any hover states
+            canvas.style.cursor = "default"; 
         }
         render();
-    };
+    }
 
-    window.onmousemove = (e) => {
+    function handlePointerMove(e) {
+        if ((isDragging || isResizing || activeCropHandle || marquee) && e.type === 'touchmove') {
+            e.preventDefault(); // Stop screen scrolling while actively dragging/resizing on mobile
+        }
+
+        const pos = getPointerPos(e);
         const rect = canvas.getBoundingClientRect();
-        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+        const mx = (pos.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (pos.clientY - rect.top) * (canvas.height / rect.height);
 
         // Update Cursor
         if (!isDragging && !isResizing && !activeCropHandle && !marquee) {
@@ -619,7 +643,7 @@
                     else canvas.style.cursor = "default";
                 }
             } else {
-                canvas.style.cursor = "default"; // Guarantee default cursor if nothing selected
+                canvas.style.cursor = "default"; 
             }
         }
 
@@ -684,9 +708,9 @@
             });
             render();
         }
-    };
+    }
 
-    window.onmouseup = () => {
+    function handlePointerUp(e) {
         // Finalize Marquee Select
         if (marquee) {
             let rx = Math.min(marquee.x, marquee.x + marquee.w);
@@ -744,9 +768,20 @@
         isDragging = false;
         isResizing = false;
         cloningMode = false;
-    };
+    }
 
-    // Scroll Wheel Resizing for Group
+    // Attach Unified Listeners
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
+
+    window.addEventListener('mouseup', handlePointerUp);
+    window.addEventListener('touchend', handlePointerUp);
+
+
+    // Scroll Wheel Resizing for Group (Desktop)
     canvas.addEventListener('wheel', (e) => {
         if (selectedGroup.length > 0) {
             const rect = canvas.getBoundingClientRect();
@@ -796,14 +831,13 @@
         }
         
         if (filesToPaste.length > 0) {
-            e.preventDefault(); // Prevent default browser paste behaviors
+            e.preventDefault();
             handleFiles(filesToPaste);
         }
     });
 
-    // --- Click Outside to Deselect ---
-    document.addEventListener('mousedown', (e) => {
-        // Check if the user clicked outside the canvas AND outside the interactive toolbar
+    // --- Click Outside to Deselect (Unified Touch & Mouse) ---
+    function handleOutsideClick(e) {
         if (e.target !== canvas && !e.target.closest('.toolbar')) {
             let needsRender = false;
             
@@ -823,7 +857,10 @@
             
             if (needsRender) render();
         }
-    });
+    }
+    
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick, {passive: true});
 
     // --- PASTE Button Support via Clipboard API ---
     async function pasteImage() {
@@ -876,7 +913,6 @@
             activeCropHandle = null;
         }
         
-        // This ensures the canvas instantly shows the handles when you click "Crop"
         render(); 
     }
 

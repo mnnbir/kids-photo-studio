@@ -347,6 +347,10 @@ class A4PrintStudio(QMainWindow):
         button_layout.setSpacing(10)
         button_layout.setContentsMargins(10, 10, 10, 10)
 
+        self.add_photo_btn = QPushButton("📁 ADD PHOTO")
+        self.add_photo_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #3F51B5; color: white; border-radius: 8px;")
+        self.add_photo_btn.clicked.connect(self.add_photo)
+
         self.undo_btn = QPushButton("↩️ UNDO")
         self.undo_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #607D8B; color: white; border-radius: 8px;")
         self.undo_btn.clicked.connect(self.undo)
@@ -388,6 +392,7 @@ class A4PrintStudio(QMainWindow):
         self.crop_btn.clicked.connect(self.toggle_crop_mode)
         self.crop_btn.setVisible(False)
 
+        button_layout.addWidget(self.add_photo_btn)
         button_layout.addWidget(self.undo_btn)
         button_layout.addWidget(self.paste_btn)
         button_layout.addWidget(self.reset_btn)
@@ -506,6 +511,27 @@ class A4PrintStudio(QMainWindow):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+
+    def add_photo(self):
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            self, "Select Photos", "", "Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp *.tiff *.tif *.heic *.heif)"
+        )
+        if file_paths:
+            self.save_state()
+            drop_point = QPointF(794 / 2, 1123 / 2)
+            offset_x = 0
+            offset_y = 0
+            for file_path in file_paths:
+                pixmap = QPixmap(file_path)
+                if not pixmap.isNull():
+                    if pixmap.width() > 500 or pixmap.height() > 500:
+                        pixmap = pixmap.scaled(500, 500, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    item = DraggableImage(pixmap)
+                    self.scene.addItem(item)
+                    item.setPos(drop_point.x() - (pixmap.width() / 2) + offset_x, 
+                                drop_point.y() - (pixmap.height() / 2) + offset_y)
+                    offset_x += 30
+                    offset_y += 30
 
     def paste_image(self):
         clip = QApplication.clipboard()
