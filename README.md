@@ -1,4 +1,5 @@
 🎨 KIDS PHOTO PRINTING STUDIO
+
 The simplest, most intuitive way for kids to create, save, and print photo collages on Windows and the Web.
 KIDS PHOTO PRINTING STUDIO is an open-source application designed specifically for children. Unlike standard word processors or complex photo editors, this app provides a pure "blank paper" experience. There are no invisible text alignment rules or complicated layers to fight—just a canvas, some photos, and total creative freedom.
 
