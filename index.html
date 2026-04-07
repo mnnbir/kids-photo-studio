@@ -229,6 +229,8 @@
             
             <div class="toolbar-divider"></div>
 
+            <button class="btn" style="background: #2196F3; color: white;" onclick="saveJPG()">💾 SAVE JPG</button>
+            <button class="btn" style="background: #E91E63; color: white;" onclick="savePDF()">📄 SAVE PDF</button>
             <button class="btn" style="background: var(--primary); color: white;" onclick="triggerPrint()">🖨️ PRINT A4</button>
             
             <input type="file" id="fileInput" hidden accept="image/*" multiple onchange="handleFiles(this.files)">
@@ -268,6 +270,7 @@
     </aside>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
     const canvas = document.getElementById('studioCanvas');
     const ctx = canvas.getContext('2d');
@@ -447,7 +450,8 @@
     }
 
     function render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         images.forEach(img => img.draw());
 
         if (marquee) {
@@ -891,6 +895,62 @@
             if (wasCropping) toggleCrop();
             render();
         };
+    }
+
+    function saveJPG() {
+        const prevSelection = [...selectedGroup];
+        const wasCropping = croppingMode;
+        
+        // Hide selection UI before capturing
+        selectedGroup = [];
+        if (wasCropping) toggleCrop();
+        render();
+        
+        // Create an image and force a download
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const link = document.createElement('a');
+        link.download = 'kids_studio_collage.jpg';
+        link.href = dataUrl;
+        link.click();
+        
+        // Restore selection UI
+        selectedGroup = prevSelection;
+        if (wasCropping) toggleCrop();
+        render();
+    }
+
+    function savePDF() {
+        if (!window.jspdf) {
+            alert("PDF engine is still loading, please try again in a few seconds!");
+            return;
+        }
+        
+        const prevSelection = [...selectedGroup];
+        const wasCropping = croppingMode;
+        
+        // Hide selection UI before capturing
+        selectedGroup = [];
+        if (wasCropping) toggleCrop();
+        render();
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const { jsPDF } = window.jspdf;
+        
+        // Create A4 PDF (210mm x 297mm)
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        // Map the image precisely to the A4 page limits
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, 210, 297);
+        pdf.save('kids_studio_collage.pdf');
+        
+        // Restore selection UI
+        selectedGroup = prevSelection;
+        if (wasCropping) toggleCrop();
+        render();
     }
 
     canvas.ondragover = (e) => e.preventDefault();

@@ -3,8 +3,9 @@ import math
 import os
 from PyQt6.QtWidgets import (QApplication, QGraphicsView, QGraphicsScene, 
                              QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, 
-                             QGraphicsPixmapItem, QGraphicsItem, QStyle, QGraphicsRectItem)
-from PyQt6.QtGui import QPixmap, QClipboard, QPainter, QPen, QColor, QBrush, QTransform, QIcon
+                             QGraphicsPixmapItem, QGraphicsItem, QStyle, QGraphicsRectItem,
+                             QFileDialog)
+from PyQt6.QtGui import QPixmap, QClipboard, QPainter, QPen, QColor, QBrush, QTransform, QIcon, QImage
 from PyQt6.QtCore import Qt, QRectF, QPointF
 from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
 
@@ -313,6 +314,16 @@ class CanvasView(QGraphicsView):
                         drop_point.setX(drop_point.x() + 30)
                         drop_point.setY(drop_point.y() + 30)
             event.acceptProposedAction()
+            
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
+        # Handle clicking blank space to cancel crop/selection
+        if not self.scene().itemAt(self.mapToScene(event.pos()), self.transform()):
+            for item in self.scene().items():
+                if isinstance(item, DraggableImage) and item.cropping_mode:
+                    item.cropping_mode = False
+                    item.update()
+            self.main_window.reset_crop_button()
 
 # --- 3. The Main Application Window ---
 class A4PrintStudio(QMainWindow):
@@ -349,6 +360,14 @@ class A4PrintStudio(QMainWindow):
         self.reset_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #9E9E9E; color: white; border-radius: 8px;")
         self.reset_btn.clicked.connect(self.reset_canvas)
 
+        self.save_jpg_btn = QPushButton("💾 SAVE JPG")
+        self.save_jpg_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #00BCD4; color: white; border-radius: 8px;")
+        self.save_jpg_btn.clicked.connect(self.save_jpg)
+
+        self.save_pdf_btn = QPushButton("📄 SAVE PDF")
+        self.save_pdf_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #E91E63; color: white; border-radius: 8px;")
+        self.save_pdf_btn.clicked.connect(self.save_pdf)
+
         self.print_btn = QPushButton("🖨️ PRINT")
         self.print_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #2196F3; color: white; border-radius: 8px;")
         self.print_btn.clicked.connect(self.print_canvas)
@@ -372,6 +391,8 @@ class A4PrintStudio(QMainWindow):
         button_layout.addWidget(self.undo_btn)
         button_layout.addWidget(self.paste_btn)
         button_layout.addWidget(self.reset_btn)
+        button_layout.addWidget(self.save_jpg_btn)
+        button_layout.addWidget(self.save_pdf_btn)
         button_layout.addWidget(self.print_btn)
         button_layout.addStretch() 
         button_layout.addWidget(self.delete_btn)
@@ -497,6 +518,38 @@ class A4PrintStudio(QMainWindow):
             it = DraggableImage(px)
             self.scene.addItem(it)
             it.setPos((794 / 2) - (px.width() / 2), (1123 / 2) - (px.height() / 2))
+
+    def save_jpg(self):
+        """Saves the exact A4 canvas as a high quality JPG"""
+        self.scene.clearSelection() # Hide UI elements before saving
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Collage as JPG", "", "JPEG Image (*.jpg *.jpeg)")
+        
+        if file_path:
+            # Create a flat canvas matching standard A4 dimensions
+            image = QImage(794, 1123, QImage.Format.Format_ARGB32)
+            image.fill(Qt.GlobalColor.white)
+            
+            painter = QPainter(image)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            self.scene.render(painter, QRectF(0, 0, 794, 1123), QRectF(0, 0, 794, 1123))
+            painter.end()
+            
+            image.save(file_path, "JPG", 100)
+
+    def save_pdf(self):
+        """Exports the canvas directly to a PDF file"""
+        self.scene.clearSelection() # Hide UI elements before saving
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Collage as PDF", "", "PDF Document (*.pdf)")
+        
+        if file_path:
+            printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+            printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+            printer.setOutputFileName(file_path)
+            
+            painter = QPainter(printer)
+            target_rect = QRectF(0, 0, printer.pageLayout().paintRectPixels(printer.resolution()).width(), printer.pageLayout().paintRectPixels(printer.resolution()).height())
+            self.scene.render(painter, target_rect, QRectF(0, 0, 794, 1123))
+            painter.end()
 
     def print_canvas(self):
         self.scene.clearSelection() 
