@@ -54,31 +54,48 @@
         .toolbar-column {
             flex: 0 0 200px;
             height: 100%;
-            overflow-y: auto;
-            /* Hide scrollbar for a clean look */
-            -ms-overflow-style: none;
-            scrollbar-width: none;
         }
-        .toolbar-column::-webkit-scrollbar { display: none; }
         
         .toolbar {
             background: white;
             padding: 15px;
             border-radius: 15px;
-            margin-bottom: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            min-height: min-content;
+            gap: 6px;
+            height: 100%; /* Force it to exactly match the screen height */
+            box-sizing: border-box;
+        }
+
+        /* Make buttons dynamically scale in height so they always fit */
+        .toolbar .btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            margin: 0;
+            max-height: 55px; /* Cap so they don't look weird on giant screens */
+            min-height: 25px; /* Ensure they stay clickable */
+            font-size: clamp(11px, 1.6vh, 15px); /* Shrink text if height gets tiny */
+            width: 100%;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+            cursor: pointer;
+            border: none;
+            box-sizing: border-box;
         }
         
         .toolbar-divider {
             width: 100%;
             height: 2px;
             background-color: #e0e0e0;
-            margin: 5px 0;
+            margin: 2px 0;
             border-radius: 2px;
+            flex-shrink: 0; /* Prevent the divider from squishing */
         }
 
         /* --- Middle Column: Canvas --- */
@@ -141,6 +158,7 @@
         }
         .download-box h3 { margin-top: 0; font-size: 1.1em; }
 
+        /* Standard buttons for the right column */
         .btn {
             padding: 12px 15px;
             border-radius: 50px;
@@ -154,6 +172,7 @@
             text-align: center;
             box-sizing: border-box;
             font-size: 0.95em;
+            margin: 5px 0;
         }
         .btn-win { background: var(--success); color: white; }
         .btn-git { background: var(--dark); color: white; }
@@ -180,8 +199,11 @@
 
         /* --- Print Mode --- */
         @media print {
-            header, .main-layout, footer { display: none !important; }
+            header, .toolbar-column, .right-column, .footer-text { display: none !important; }
             body { background: white; margin: 0; padding: 0; height: auto; overflow: visible; display: block; }
+            .main-layout { display: block; padding: 0; height: auto; overflow: visible; }
+            .canvas-column { display: block; height: auto; }
+            #canvas-area { padding: 0; background: transparent; box-shadow: none; display: block; height: auto; }
             #print-image { 
                 display: block !important; 
                 width: 100%; 
@@ -197,8 +219,8 @@
             body { height: auto; overflow: auto; display: block; }
             .main-layout { flex-direction: column; align-items: center; height: auto; overflow: visible; }
             .toolbar-column, .right-column, .canvas-column { width: 100%; flex: none; height: auto; overflow: visible; }
-            .toolbar { flex-direction: row; flex-wrap: wrap; }
-            .toolbar .btn { width: auto; padding: 12px 20px; }
+            .toolbar { flex-direction: row; flex-wrap: wrap; height: auto; padding: 15px; gap: 10px; }
+            .toolbar .btn { flex: 1 1 auto; width: auto; padding: 12px 20px; height: 45px; max-height: none; }
             .toolbar-divider { width: 2px; height: auto; margin: 0; }
             #canvas-area { height: 80vh; }
         }
@@ -229,7 +251,7 @@
             
             <div class="toolbar-divider"></div>
 
-            <button class="btn" style="background: #2196F3; color: white;" onclick="saveJPG()">💾 SAVE JPG</button>
+            <button class="btn" style="background: #00BCD4; color: white;" onclick="saveJPG()">💾 SAVE JPG</button>
             <button class="btn" style="background: #E91E63; color: white;" onclick="savePDF()">📄 SAVE PDF</button>
             <button class="btn" style="background: var(--primary); color: white;" onclick="triggerPrint()">🖨️ PRINT A4</button>
             
