@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QGraphicsView, QGraphicsScene,
                              QGraphicsPixmapItem, QGraphicsItem, QStyle, QGraphicsRectItem)
 from PyQt6.QtGui import QPixmap, QClipboard, QPainter, QPen, QColor, QBrush, QTransform, QIcon
 from PyQt6.QtCore import Qt, QRectF, QPointF
+from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
 
 # --- 1. The Custom Image Logic ---
 class DraggableImage(QGraphicsPixmapItem):
@@ -17,21 +18,22 @@ class DraggableImage(QGraphicsPixmapItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setTransformOriginPoint(self.boundingRect().center())
         
-        # State variables
         self.resizing = False
         self.hover_corner = False
-        self.cropping_mode = False
-        self.crop_start = None
-        self.crop_end = None
         
-        # Cloning variables
+        # Independent Edge Cropping Setup
+        self.cropping_mode = False
+        self.crop_edge = None
+        self.hover_crop_edge = None
+        self.crop_l = 0
+        self.crop_r = 0
+        self.crop_t = 0
+        self.crop_b = 0
+        
+        # Cloning tracking
         self.cloning_mode = False
-        self.clone_item = None
-        self.start_scene_pos = None
-        self.original_item_pos = None
 
     def rotate_90(self):
-        """Spins the image 90 degrees."""
         transform = QTransform().rotate(90)
         new_pixmap = self.pixmap().transformed(transform, Qt.TransformationMode.SmoothTransformation)
         center_scene = self.mapToScene(self.boundingRect().center())
@@ -44,22 +46,34 @@ class DraggableImage(QGraphicsPixmapItem):
         self.setPos(self.pos() + offset)
 
     def hoverMoveEvent(self, event):
-        """Handles cursor changes for resizing."""
-        if not self.isSelected() or self.cropping_mode:
+        if not self.isSelected():
             self.setCursor(Qt.CursorShape.ArrowCursor)
             super().hoverMoveEvent(event)
             return
 
         pos = event.pos()
         rect = self.boundingRect()
-        m = 40.0 / self.scale() if self.scale() > 0 else 40.0
+        m = 20.0 / self.scale() if self.scale() > 0 else 20.0
 
-        if (pos.x() < rect.left() + m and pos.y() < rect.top() + m) or \
-           (pos.x() > rect.right() - m and pos.y() > rect.bottom() - m):
+        if self.cropping_mode:
+            self.hover_crop_edge = None
+            if pos.x() < m: 
+                self.setCursor(Qt.CursorShape.SizeHorCursor); self.hover_crop_edge = 'left'
+            elif pos.x() > rect.width() - m: 
+                self.setCursor(Qt.CursorShape.SizeHorCursor); self.hover_crop_edge = 'right'
+            elif pos.y() < m: 
+                self.setCursor(Qt.CursorShape.SizeVerCursor); self.hover_crop_edge = 'top'
+            elif pos.y() > rect.height() - m: 
+                self.setCursor(Qt.CursorShape.SizeVerCursor); self.hover_crop_edge = 'bottom'
+            else: 
+                self.setCursor(Qt.CursorShape.ArrowCursor)
+            return
+
+        # Resizing Checks
+        if (pos.x() < m and pos.y() < m) or (pos.x() > rect.right() - m and pos.y() > rect.bottom() - m):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
             self.hover_corner = True
-        elif (pos.x() > rect.right() - m and pos.y() < rect.top() + m) or \
-             (pos.x() < rect.left() + m and pos.y() > rect.bottom() - m):
+        elif (pos.x() > rect.right() - m and pos.y() < m) or (pos.x() < m and pos.y() > rect.bottom() - m):
             self.setCursor(Qt.CursorShape.SizeBDiagCursor)
             self.hover_corner = True
         else:
@@ -69,37 +83,41 @@ class DraggableImage(QGraphicsPixmapItem):
         super().hoverMoveEvent(event)
 
     def mousePressEvent(self, event):
-        """Detects Ctrl key for cloning or regular movement."""
-        # Check for CTRL + Drag (Cloning)
+        # 1. Check for Group Ctrl + Drag (Cloning)
         if event.modifiers() == Qt.KeyboardModifier.ControlModifier and not self.cropping_mode:
             try: self.scene().views()[0].main_window.save_state()
             except: pass
 
             self.cloning_mode = True
             self.start_scene_pos = event.scenePos()
-            self.original_item_pos = self.pos()
-            
-            # Create the clone
-            self.clone_item = DraggableImage(self.pixmap())
-            self.clone_item.setScale(self.scale())
-            self.clone_item.setRotation(self.rotation())
-            self.scene().addItem(self.clone_item)
-            self.clone_item.setPos(self.original_item_pos)
-            
-            # Lock the original in place while we drag the new one
-            self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+            self.clone_data = []
+
+            # Act on all selected items
+            selected = self.scene().selectedItems()
+            if self not in selected: selected = [self]
+
+            for item in selected:
+                if isinstance(item, DraggableImage):
+                    # Leave a clone behind, move the current active selection
+                    bg_clone = DraggableImage(item.pixmap())
+                    bg_clone.setScale(item.scale())
+                    bg_clone.setRotation(item.rotation())
+                    bg_clone.setPos(item.pos())
+                    self.scene().addItem(bg_clone)
+                    bg_clone.setSelected(False)
+                    self.clone_data.append({'item': item, 'orig_pos': item.pos()})
             return
 
-        # Regular Click Logic
+        # 2. Check for Edge Crop Drag
         try: self.scene().views()[0].main_window.save_state()
         except: pass
 
-        if self.cropping_mode:
-            self.crop_start = event.pos()
-            self.crop_end = event.pos()
+        if self.cropping_mode and self.hover_crop_edge:
+            self.crop_edge = self.hover_crop_edge
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
             return
 
+        # 3. Check for Resizing
         if getattr(self, 'hover_corner', False) and self.isSelected():
             self.resizing = True
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
@@ -107,31 +125,35 @@ class DraggableImage(QGraphicsPixmapItem):
             self.start_mouse_pos = event.scenePos()
         else:
             self.resizing = False
+            
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        """Handles straight-line cloning and resizing."""
-        if self.cloning_mode and self.clone_item:
-            current_mouse_pos = event.scenePos()
-            diff = current_mouse_pos - self.start_scene_pos
+        # 1. Cloning / Axis Snapping for Group
+        if getattr(self, 'cloning_mode', False):
+            dx = event.scenePos().x() - self.start_scene_pos.x()
+            dy = event.scenePos().y() - self.start_scene_pos.y()
             
-            dx = diff.x()
-            dy = diff.y()
-            
-            # Snap to straight line (Axis locking)
-            if abs(dx) > abs(dy):
-                # Horizontal Move
-                self.clone_item.setPos(self.original_item_pos.x() + dx, self.original_item_pos.y())
-            else:
-                # Vertical Move
-                self.clone_item.setPos(self.original_item_pos.x(), self.original_item_pos.y() + dy)
+            # Snap to straight line axis
+            if abs(dx) > abs(dy): dy = 0
+            else: dx = 0
+
+            for data in getattr(self, 'clone_data', []):
+                data['item'].setPos(data['orig_pos'].x() + dx, data['orig_pos'].y() + dy)
             return
 
-        if self.cropping_mode and self.crop_start:
-            self.crop_end = event.pos()
+        # 2. Dynamic Edge Cropping
+        if getattr(self, 'crop_edge', None):
+            pos = event.pos()
+            rect = self.boundingRect()
+            if self.crop_edge == 'left': self.crop_l = max(0.0, min(rect.width() - self.crop_r - 20, pos.x()))
+            elif self.crop_edge == 'right': self.crop_r = max(0.0, min(rect.width() - self.crop_l - 20, rect.width() - pos.x()))
+            elif self.crop_edge == 'top': self.crop_t = max(0.0, min(rect.height() - self.crop_b - 20, pos.y()))
+            elif self.crop_edge == 'bottom': self.crop_b = max(0.0, min(rect.height() - self.crop_t - 20, rect.height() - pos.y()))
             self.update()
             return
 
+        # 3. Scaling
         if self.resizing:
             center_scene_pos = self.mapToScene(self.transformOriginPoint())
             def calc_dist(p1, p2): return math.hypot(p1.x() - p2.x(), p1.y() - p2.y())
@@ -142,31 +164,54 @@ class DraggableImage(QGraphicsPixmapItem):
                 new_scale = self.start_scale * scale_ratio
                 if new_scale > 0.05: self.setScale(new_scale)
         else:
+            # Native PyQt Group dragging happens here magically!
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        """Finishes resizing, cropping, or cloning."""
-        if self.cloning_mode:
+        if getattr(self, 'cloning_mode', False):
             self.cloning_mode = False
-            self.clone_item = None
-            self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
             return
 
-        if self.cropping_mode and self.crop_start:
-            self.crop_end = event.pos()
-            rect = QRectF(self.crop_start, self.crop_end).normalized()
-            if rect.width() > 10 and rect.height() > 10:
-                top_left_scene = self.mapToScene(rect.topLeft())
-                cropped_pixmap = self.pixmap().copy(rect.toRect())
+        # Commit Geometric Cropping mathematically
+        if getattr(self, 'crop_edge', None):
+            rect = self.boundingRect()
+            old_w = rect.width()
+            old_h = rect.height()
+            new_w = old_w - self.crop_l - self.crop_r
+            new_h = old_h - self.crop_t - self.crop_b
+
+            if new_w > 10 and new_h > 10:
+                scale = self.scale()
+                # Find geometric center shift to prevent visual jumping on rotated images
+                dx = self.crop_l + new_w/2.0 - old_w/2.0
+                dy = self.crop_t + new_h/2.0 - old_h/2.0
+                rad = math.radians(self.rotation())
+                gdx = dx * math.cos(rad) - dy * math.sin(rad)
+                gdy = dx * math.sin(rad) + dy * math.cos(rad)
+
+                old_global_center = self.mapToScene(self.transformOriginPoint())
+                new_global_center = QPointF(old_global_center.x() + gdx * scale, old_global_center.y() + gdy * scale)
+
+                # Execute Physical pixel crop
+                phys_rect = QRectF(self.crop_l, self.crop_t, new_w, new_h).toRect()
+                cropped_pixmap = self.pixmap().copy(phys_rect)
                 self.setPixmap(cropped_pixmap)
-                self.setPos(top_left_scene)
+                
+                # Correct Transform Anchor
                 self.setTransformOriginPoint(self.boundingRect().center())
-            self.crop_start = self.crop_end = None
-            self.cropping_mode = False
+                
+                # Align exact coordinates back
+                new_center_local = self.mapToScene(self.transformOriginPoint())
+                offset = new_global_center - new_center_local
+                self.setPos(self.pos() + offset)
+
+            self.crop_edge = None
+            self.crop_l = self.crop_r = self.crop_t = self.crop_b = 0
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+            self.update()
+            
             for view in self.scene().views():
                 if hasattr(view.main_window, 'reset_crop_button'): view.main_window.reset_crop_button()
-            self.update()
             return
 
         if self.resizing:
@@ -177,10 +222,13 @@ class DraggableImage(QGraphicsPixmapItem):
     def paint(self, painter, option, widget):
         option.state &= ~QStyle.StateFlag.State_Selected 
         super().paint(painter, option, widget)
+        
+        rect = self.boundingRect()
+        
+        # Standard Select UI
         if self.isSelected() and not self.cropping_mode:
             pen = QPen(Qt.GlobalColor.blue, max(3.0 / self.scale(), 1.0), Qt.PenStyle.DashLine)
             painter.setPen(pen)
-            rect = self.boundingRect()
             painter.drawRect(rect)
             hs = max(30.0 / self.scale(), 5.0) 
             painter.setBrush(Qt.GlobalColor.blue)
@@ -189,12 +237,44 @@ class DraggableImage(QGraphicsPixmapItem):
             painter.drawRect(QRectF(rect.right() - hs, rect.top(), hs, hs))
             painter.drawRect(QRectF(rect.left(), rect.bottom() - hs, hs, hs))
             painter.drawRect(QRectF(rect.right() - hs, rect.bottom() - hs, hs, hs))
-        if self.cropping_mode and self.crop_start and self.crop_end:
-            rect = QRectF(self.crop_start, self.crop_end).normalized()
-            painter.setPen(QPen(Qt.GlobalColor.red, max(3.0 / self.scale(), 1.0), Qt.PenStyle.SolidLine))
-            painter.setBrush(QColor(255, 0, 0, 80)) 
-            painter.drawRect(rect)
 
+        # Edge Crop UI
+        if self.cropping_mode and self.isSelected():
+            # Red transparent overlays
+            painter.setBrush(QColor(255, 0, 0, 100))
+            painter.setPen(Qt.PenStyle.NoPen)
+            if self.crop_l > 0: painter.drawRect(QRectF(0, 0, self.crop_l, rect.height()))
+            if self.crop_r > 0: painter.drawRect(QRectF(rect.width() - self.crop_r, 0, self.crop_r, rect.height()))
+            if self.crop_t > 0: painter.drawRect(QRectF(self.crop_l, 0, rect.width() - self.crop_l - self.crop_r, self.crop_t))
+            if self.crop_b > 0: painter.drawRect(QRectF(self.crop_l, rect.height() - self.crop_b, rect.width() - self.crop_l - self.crop_r, self.crop_b))
+            
+            # Pink interactive thick lines
+            painter.setPen(QPen(QColor(233, 30, 99), max(6.0 / self.scale(), 2.0), Qt.PenStyle.SolidLine))
+            painter.drawLine(QPointF(self.crop_l, self.crop_t), QPointF(self.crop_l, rect.height() - self.crop_b)) # Left
+            painter.drawLine(QPointF(rect.width() - self.crop_r, self.crop_t), QPointF(rect.width() - self.crop_r, rect.height() - self.crop_b)) # Right
+            painter.drawLine(QPointF(self.crop_l, self.crop_t), QPointF(rect.width() - self.crop_r, self.crop_t)) # Top
+            painter.drawLine(QPointF(self.crop_l, rect.height() - self.crop_b), QPointF(rect.width() - self.crop_r, rect.height() - self.crop_b)) # Bottom
+
+            # Draw white prominent drag handles in the middle of each edge
+            painter.setBrush(Qt.GlobalColor.white)
+            painter.setPen(QPen(QColor(233, 30, 99), max(2.0 / self.scale(), 1.0), Qt.PenStyle.SolidLine))
+            
+            hw = max(24.0 / self.scale(), 12.0) # Horizontal handle width
+            hh = max(10.0 / self.scale(), 5.0)  # Horizontal handle height
+            vw = max(10.0 / self.scale(), 5.0)  # Vertical handle width
+            vh = max(24.0 / self.scale(), 12.0) # Vertical handle height
+            
+            center_x = rect.width() / 2.0
+            center_y = rect.height() / 2.0
+
+            # Top Handle
+            painter.drawRect(QRectF(center_x - hw/2.0, self.crop_t - hh/2.0, hw, hh))
+            # Bottom Handle
+            painter.drawRect(QRectF(center_x - hw/2.0, rect.height() - self.crop_b - hh/2.0, hw, hh))
+            # Left Handle
+            painter.drawRect(QRectF(self.crop_l - vw/2.0, center_y - vh/2.0, vw, vh))
+            # Right Handle
+            painter.drawRect(QRectF(rect.width() - self.crop_r - vw/2.0, center_y - vh/2.0, vw, vh))
 
 # --- 2. The Custom Interactive View ---
 class CanvasView(QGraphicsView):
@@ -203,6 +283,9 @@ class CanvasView(QGraphicsView):
         self.main_window = main_window
         self.setAcceptDrops(True) 
         self.setStyleSheet("background-color: #2b2b2b; border: none;")
+        
+        # Enable Built-in Marquee Drag Selection
+        self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls(): event.acceptProposedAction()
@@ -345,21 +428,22 @@ class A4PrintStudio(QMainWindow):
         self.scene.clearSelection()
 
     def reset_canvas(self):
-        """Clears everything off the paper."""
-        if not any(isinstance(i, DraggableImage) for i in self.scene.items()):
-            return
+        if not any(isinstance(i, DraggableImage) for i in self.scene.items()): return
         self.save_state()
         for i in self.scene.items():
-            if isinstance(i, DraggableImage):
-                self.scene.removeItem(i)
+            if isinstance(i, DraggableImage): self.scene.removeItem(i)
         self.on_selection_changed()
 
     def on_selection_changed(self):
-        has = len(self.scene.selectedItems()) > 0
+        selected = self.scene.selectedItems()
+        has = len(selected) > 0
         self.delete_btn.setVisible(has)
         self.rotate_btn.setVisible(has)
-        self.crop_btn.setVisible(has)
-        if not has:
+        
+        # Crop only allows exactly one item
+        self.crop_btn.setVisible(len(selected) == 1)
+
+        if len(selected) != 1:
             for i in self.scene.items():
                 if isinstance(i, DraggableImage): i.cropping_mode = False
             self.reset_crop_button()
@@ -374,14 +458,20 @@ class A4PrintStudio(QMainWindow):
             if isinstance(i, DraggableImage): i.rotate_90()
 
     def toggle_crop_mode(self):
-        for i in self.scene.selectedItems():
-            if isinstance(i, DraggableImage):
-                i.cropping_mode = not i.cropping_mode
-                if i.cropping_mode:
-                    self.crop_btn.setText("🟩 DRAW BOX ON PHOTO TO CROP")
-                    self.crop_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #E91E63; color: white; border-radius: 8px;")
-                else: self.reset_crop_button()
-                i.update()
+        selected = self.scene.selectedItems()
+        if len(selected) != 1: return
+        item = selected[0]
+        if isinstance(item, DraggableImage):
+            item.cropping_mode = not item.cropping_mode
+            if item.cropping_mode:
+                self.crop_btn.setText("🟩 DRAG EDGES INWARD")
+                self.crop_btn.setStyleSheet("font-size: 20px; font-weight: bold; padding: 15px; background-color: #E91E63; color: white; border-radius: 8px;")
+            else: 
+                self.reset_crop_button()
+            
+            # Immediately schedule a redraw!
+            item.update()
+            self.scene.update()
 
     def reset_crop_button(self):
         self.crop_btn.setText("✂️ CROP")

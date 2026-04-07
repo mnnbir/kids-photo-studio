@@ -3,181 +3,765 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kids Photo Printing Studio | Download</title>
+    <title>Kids Photo Printing Studio | Web & Desktop</title>
     <style>
+        :root {
+            --primary: #1a73e8;
+            --success: #34a853;
+            --danger: #d93025;
+            --dark: #202124;
+        }
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             margin: 0;
-            padding: 0;
-            background-color: #f0f4f8;
+            background-color: #f1f3f4;
             color: #2c3e50;
+        }
+
+        header {
+            width: 100%;
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 { margin: 0; color: var(--primary); font-size: 2.5em; }
+
+        .main-layout {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 0 20px;
+            align-items: flex-start;
+        }
+
+        .left-column {
+            flex: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .container {
-            max-width: 900px;
-            width: 90%;
-            margin: 50px 0;
+        .toolbar {
             background: white;
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        h1 {
-            color: #1a73e8;
-            font-size: 2.8em;
-            margin-bottom: 10px;
-        }
-        p.subtitle {
-            font-size: 1.2em;
-            color: #5f6368;
-            margin-bottom: 30px;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
-        /* Screenshot Styling */
-        .screenshot-container {
-            margin: 30px 0;
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            border: 4px solid #fff;
-        }
-        .screenshot-container img {
-            width: 100%;
-            display: block;
-            transition: transform 0.3s ease;
-        }
-        .screenshot-container:hover img {
-            transform: scale(1.02);
+        .toolbar-divider {
+            width: 2px;
+            background-color: #e0e0e0;
+            margin: 0 5px;
+            border-radius: 2px;
         }
 
-        /* Button Container */
-        .cta-group {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 30px 0;
+        #canvas-area {
+            background: #5f6368;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+            width: fit-content;
+        }
+        canvas {
+            background: white;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            cursor: default;
+            max-width: 100%;
+            height: auto;
         }
 
-        .download-btn {
-            display: inline-block;
-            background-color: #34a853;
-            color: white;
-            padding: 18px 40px;
-            font-size: 1.3em;
-            font-weight: bold;
-            text-decoration: none;
-            border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(52, 168, 83, 0.3);
-            transition: all 0.2s;
+        .right-column {
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 20px;
         }
-        .download-btn:hover {
-            background-color: #2d8e47;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4);
-        }
-
-        .github-btn {
-            display: inline-block;
-            background-color: #24292e;
-            color: white;
-            padding: 18px 40px;
-            font-size: 1.3em;
-            font-weight: bold;
-            text-decoration: none;
-            border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s;
-        }
-        .github-btn:hover {
-            background-color: #444;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            text-align: left;
-            margin-top: 40px;
-        }
-        .feature-card {
-            background: #f8f9fa;
+        .description-box h2 { color: var(--primary); margin-top: 0; }
+        .description-box p { line-height: 1.6; color: #5f6368; }
+        
+        .download-box {
+            background: #e8f0fe;
             padding: 20px;
             border-radius: 15px;
-            border-left: 5px solid #1a73e8;
+            margin: 25px 0;
+            border-left: 5px solid var(--primary);
         }
-        .feature-card h3 {
-            margin-top: 0;
-            color: #1a73e8;
-        }
-        .feature-card.github {
-            border-left-color: #24292e;
-            background-color: #f1f3f4;
-        }
-        footer {
-            margin-bottom: 50px;
-            color: #9aa0a6;
-            font-size: 0.9em;
-        }
-        footer a {
-            color: #1a73e8;
+        .download-box h3 { margin-top: 0; font-size: 1.1em; }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 50px;
             text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+            display: inline-block;
+            margin: 5px 0;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
         }
+        .btn-win { background: var(--success); color: white; }
+        .btn-git { background: var(--dark); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        .feature-list {
+            text-align: left;
+            margin-top: 20px;
+            padding-left: 20px;
+            font-size: 0.95em;
+            color: #555;
+        }
+        .feature-list li { margin-bottom: 10px; }
+
+        #print-image { display: none; }
+
+        @media print {
+            header, .main-layout, footer { display: none !important; }
+            body { background: white; margin: 0; padding: 0; }
+            #print-image { 
+                display: block !important; 
+                width: 100%; 
+                max-width: 100%; 
+                height: auto; 
+                margin: 0;
+            }
+            @page { margin: 0; size: A4 portrait; }
+        }
+
+        @media (max-width: 1000px) {
+            .main-layout { flex-direction: column; }
+            .right-column { position: static; width: 100%; box-sizing: border-box; }
+        }
+
+        footer { margin: 40px 0; color: #70757a; font-size: 0.9em; text-align: center; width: 100%; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<img id="print-image" src="" alt="Print version">
+
+<header>
     <h1>🎨 Kids Photo Printing Studio</h1>
-    <p class="subtitle">The simplest, safest way for kids to create and print photo collages on Windows.</p>
-    
-    <!-- APP SCREENSHOT -->
-    <div class="screenshot-container">
-        <img src="app-screenshot.png" alt="Kids Photo Printing Studio Screenshot" onerror="this.src='https://via.placeholder.com/800x450?text=App+Screenshot+Loading...'">
+</header>
+
+<main class="main-layout">
+    <div class="left-column">
+        <div class="toolbar">
+            <button class="btn btn-win" style="width: auto;" onclick="document.getElementById('fileInput').click()">📁 ADD PHOTO</button>
+            <button class="btn" style="background: #607d8b; color: white; width: auto;" onclick="undo()">↩️ UNDO</button>
+            <button class="btn" style="background: #9e9e9e; color: white; width: auto;" onclick="clearCanvas()">🧹 RESET</button>
+            
+            <div class="toolbar-divider"></div>
+
+            <button class="btn" style="background: #ff9800; color: white; width: auto;" onclick="rotateSelected()">🔃 ROTATE</button>
+            <button class="btn" id="cropBtn" style="background: #9c27b0; color: white; width: auto;" onclick="toggleCrop()">✂️ CROP</button>
+            <button class="btn" style="background: var(--danger); color: white; width: auto;" onclick="deleteSelected()">🗑️ DELETE</button>
+            
+            <div class="toolbar-divider"></div>
+
+            <button class="btn" style="background: var(--primary); color: white; width: auto;" onclick="triggerPrint()">🖨️ PRINT A4</button>
+            
+            <input type="file" id="fileInput" hidden accept="image/*" multiple onchange="handleFiles(this.files)">
+        </div>
+
+        <div id="canvas-area">
+            <canvas id="studioCanvas" width="794" height="1123"></canvas>
+        </div>
     </div>
 
-    <!-- ACTION BUTTONS -->
-    <div class="cta-group">
-        <!-- Replace 'YOUR_USERNAME' with your actual GitHub username -->
-        <a href="https://github.com/mnnbir/kids-photo-studio/releases/download/v1.0.1/kids_studio_v1.0.1.exe" class="download-btn">
-            ⬇️ Download for Windows
-        </a>
-        
-        <a href="https://github.com/mnnbir/kids-photo-studio" class="github-btn">
-            🐙 View on GitHub
-        </a>
-    </div>
+    <div class="right-column">
+        <div class="description-box">
+            <h2>About the Project</h2>
+            <p>Welcome to the ultimate creative space for kids! This studio allows children to drag, drop, and arrange their favorite photos for school projects or fun collages without the complexity of traditional editors.</p>
+            
+            <ul class="feature-list">
+                <li><strong>Marquee Select:</strong> Click and drag empty space to select multiple photos.</li>
+                <li><strong>Pro Tools Built-in:</strong> Use Ctrl+Drag to clone patterns, and drag handles inward on edges to crop!</li>
+                <li><strong>Infinite Undo:</strong> Mistakes are instantly erased with the Undo button or Ctrl+Z.</li>
+            </ul>
+        </div>
 
-    <div class="features-grid">
-        <div class="feature-card">
-            <h3>🖼️ Easy Drag & Drop</h3>
-            <p>Grab photos from your folders or paste from Google. It even works with iPhone (HEIC) photos!</p>
-        </div>
-        <div class="feature-card">
-            <h3>✂️ Visual Tools</h3>
-            <p>Rotate, Resize, and Crop photos with big, colorful buttons designed for small hands.</p>
-        </div>
-        <div class="feature-card">
-            <h3>↩️ Infinite Undo</h3>
-            <p>Made a mistake? Just hit Undo or press Ctrl+Z. Nothing is ever lost!</p>
-        </div>
-        <div class="feature-card github">
-            <h3>🚀 Open Source</h3>
-            <p>This software is 100% open source. Developers can contribute new features or audit the code on GitHub.</p>
+        <div class="download-box">
+            <h3>💻 Offline Version</h3>
+            <p style="font-size: 0.9em;">Download the high-performance Windows app for extra features and complete offline privacy.</p>
+            <a href="https://github.com/mnnbir/kids-photo-studio/releases/latest/download/kids_studio.exe" class="btn btn-win">⬇️ Download for Windows PC</a>
+            <a href="https://github.com/mnnbir/kids-photo-studio" class="btn btn-git">🐙 View Source on GitHub</a>
         </div>
     </div>
-</div>
+</main>
 
 <footer>
-    Project by <a href="https://github.com/mnnbir">mnnbir</a> &copy; 2026 | 
-    <a href="https://github.com/mnnbir/kids-photo-studio">Source Code</a>
+    Open Source Project | Designed for Kids | Hosted on GitHub Pages
 </footer>
+
+<script>
+    const canvas = document.getElementById('studioCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let images = [];
+    let selectedGroup = [];
+    let undoStack = [];
+    let wheelTimeout = null;
+
+    // State
+    let isDragging = false;
+    let isResizing = false;
+    let croppingMode = false;
+    let cloningMode = false;
+    let marquee = null;
+
+    // Trackers
+    let dragOffsets = [];
+    let resizeStartDist = 0, resizeStartW = 0, resizeStartH = 0;
+    let activeCropHandle = null;
+    let cloneStartMX = 0, cloneStartMY = 0;
+
+    class StudioImage {
+        constructor(img, x, y) {
+            this.img = img;
+            this.x = x;
+            this.y = y;
+            this.rotation = 0;
+            this.sx = 0;
+            this.sy = 0;
+            this.sw = img.width;
+            this.sh = img.height;
+            
+            const scale = Math.min(400 / img.width, 400 / img.height);
+            this.w = img.width * scale;
+            this.h = img.height * scale;
+
+            // Independent Edge Cropping Data
+            this.cropL = 0;
+            this.cropR = 0;
+            this.cropT = 0;
+            this.cropB = 0;
+        }
+
+        clone() {
+            let copy = new StudioImage(this.img, this.x, this.y);
+            copy.rotation = this.rotation;
+            copy.sx = this.sx; copy.sy = this.sy;
+            copy.sw = this.sw; copy.sh = this.sh;
+            copy.w = this.w; copy.h = this.h;
+            copy.cropL = this.cropL; copy.cropR = this.cropR;
+            copy.cropT = this.cropT; copy.cropB = this.cropB;
+            return copy;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.w/2, this.y + this.h/2);
+            ctx.rotate(this.rotation * Math.PI / 180);
+            
+            // Draw Image
+            ctx.drawImage(this.img, this.sx, this.sy, this.sw, this.sh, -this.w/2, -this.h/2, this.w, this.h);
+            
+            const isSelected = selectedGroup.includes(this);
+
+            if (isSelected && !croppingMode) {
+                // Selection Box & Resize Handles
+                ctx.strokeStyle = '#1a73e8';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-this.w/2 - 2, -this.h/2 - 2, this.w + 4, this.h + 4);
+                
+                ctx.fillStyle = '#1a73e8';
+                let hs = 14; 
+                ctx.fillRect(-this.w/2 - hs/2, -this.h/2 - hs/2, hs, hs);
+                ctx.fillRect(this.w/2 - hs/2, -this.h/2 - hs/2, hs, hs);
+                ctx.fillRect(-this.w/2 - hs/2, this.h/2 - hs/2, hs, hs);
+                ctx.fillRect(this.w/2 - hs/2, this.h/2 - hs/2, hs, hs);
+            }
+
+            // Independent Edge Cropping Render
+            if (isSelected && croppingMode) {
+                // Red dimming over cropped parts
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+                if (this.cropL > 0) ctx.fillRect(-this.w/2, -this.h/2, this.cropL, this.h);
+                if (this.cropR > 0) ctx.fillRect(this.w/2 - this.cropR, -this.h/2, this.cropR, this.h);
+                if (this.cropT > 0) ctx.fillRect(-this.w/2 + this.cropL, -this.h/2, this.w - this.cropL - this.cropR, this.cropT);
+                if (this.cropB > 0) ctx.fillRect(-this.w/2 + this.cropL, this.h/2 - this.cropB, this.w - this.cropL - this.cropR, this.cropB);
+
+                // Thick crop bounds
+                ctx.strokeStyle = '#e91e63';
+                ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(-this.w/2 + this.cropL, -this.h/2 + this.cropT); ctx.lineTo(-this.w/2 + this.cropL, this.h/2 - this.cropB); ctx.stroke(); // L
+                ctx.beginPath(); ctx.moveTo(this.w/2 - this.cropR, -this.h/2 + this.cropT); ctx.lineTo(this.w/2 - this.cropR, this.h/2 - this.cropB); ctx.stroke(); // R
+                ctx.beginPath(); ctx.moveTo(-this.w/2 + this.cropL, -this.h/2 + this.cropT); ctx.lineTo(this.w/2 - this.cropR, -this.h/2 + this.cropT); ctx.stroke(); // T
+                ctx.beginPath(); ctx.moveTo(-this.w/2 + this.cropL, this.h/2 - this.cropB); ctx.lineTo(this.w/2 - this.cropR, this.h/2 - this.cropB); ctx.stroke(); // B
+
+                // Draw prominent white/pink drag handles in the middle of each edge
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = '#e91e63';
+                ctx.lineWidth = 2;
+                
+                let hw = 24, hh = 10; // Horizontal handle width/height
+                let vw = 10, vh = 24; // Vertical handle width/height
+
+                // Top Handle
+                ctx.fillRect(-hw/2, -this.h/2 + this.cropT - hh/2, hw, hh);
+                ctx.strokeRect(-hw/2, -this.h/2 + this.cropT - hh/2, hw, hh);
+                // Bottom Handle
+                ctx.fillRect(-hw/2, this.h/2 - this.cropB - hh/2, hw, hh);
+                ctx.strokeRect(-hw/2, this.h/2 - this.cropB - hh/2, hw, hh);
+                // Left Handle
+                ctx.fillRect(-this.w/2 + this.cropL - vw/2, -vh/2, vw, vh);
+                ctx.strokeRect(-this.w/2 + this.cropL - vw/2, -vh/2, vw, vh);
+                // Right Handle
+                ctx.fillRect(this.w/2 - this.cropR - vw/2, -vh/2, vw, vh);
+                ctx.strokeRect(this.w/2 - this.cropR - vw/2, -vh/2, vw, vh);
+            }
+            ctx.restore();
+        }
+    }
+
+    function statesAreEqual(s1, s2) {
+        if (s1.length !== s2.length) return false;
+        for (let i = 0; i < s1.length; i++) {
+            let a = s1[i], b = s2[i];
+            if (a.img !== b.img || a.x !== b.x || a.y !== b.y || 
+                a.w !== b.w || a.h !== b.h || a.rotation !== b.rotation ||
+                a.sx !== b.sx || a.sy !== b.sy || a.sw !== b.sw || a.sh !== b.sh) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function saveState() {
+        const newState = images.map(img => img.clone());
+        if (undoStack.length > 0 && statesAreEqual(undoStack[undoStack.length - 1], newState)) return;
+        undoStack.push(newState);
+        if (undoStack.length > 30) undoStack.shift(); 
+    }
+
+    function undo() {
+        if (undoStack.length > 0) {
+            images = undoStack.pop();
+            selectedGroup = [];
+            if (croppingMode) toggleCrop();
+            render();
+        }
+    }
+
+    function getLocalCoords(mx, my, img) {
+        let cx = img.x + img.w/2;
+        let cy = img.y + img.h/2;
+        let dx = mx - cx;
+        let dy = my - cy;
+        let rad = -img.rotation * Math.PI / 180;
+        let lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+        let ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+        return { x: lx + img.w/2, y: ly + img.h/2 };
+    }
+
+    function getGlobalCoords(lx, ly, img) {
+        let rad = img.rotation * Math.PI / 180;
+        let dx = lx - img.w/2;
+        let dy = ly - img.h/2;
+        let gx = dx * Math.cos(rad) - dy * Math.sin(rad);
+        let gy = dx * Math.sin(rad) + dy * Math.cos(rad);
+        return { x: gx + img.x + img.w/2, y: gy + img.y + img.h/2 };
+    }
+
+    function getGlobalBounds(img) {
+        let rad = img.rotation * Math.PI / 180;
+        let cx = img.x + img.w/2, cy = img.y + img.h/2;
+        let cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+        let bw = img.w * cos + img.h * sin, bh = img.w * sin + img.h * cos;
+        return { x: cx - bw/2, y: cy - bh/2, w: bw, h: bh };
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        images.forEach(img => img.draw());
+
+        if (marquee) {
+            ctx.strokeStyle = '#1a73e8';
+            ctx.fillStyle = 'rgba(26, 115, 232, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(marquee.x, marquee.y, marquee.w, marquee.h);
+            ctx.fillRect(marquee.x, marquee.y, marquee.w, marquee.h);
+        }
+    }
+
+    function handleFiles(files) {
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    saveState();
+                    let newImg = new StudioImage(img, 100, 100);
+                    newImg.x = (canvas.width / 2) - (newImg.w / 2);
+                    newImg.y = (canvas.height / 2) - (newImg.h / 2);
+                    images.push(newImg);
+                    render();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    canvas.onmousedown = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+        
+        // 1. Edge Cropping Check
+        if (croppingMode && selectedGroup.length === 1) {
+            let img = selectedGroup[0];
+            let local = getLocalCoords(mx, my, img);
+            let m = 20; // Keeps generous hit area for kids
+            
+            if (local.x >= 0 && local.x <= img.w && local.y >= 0 && local.y <= img.h) {
+                if (local.x < m) activeCropHandle = 'left';
+                else if (local.x > img.w - m) activeCropHandle = 'right';
+                else if (local.y < m) activeCropHandle = 'top';
+                else if (local.y > img.h - m) activeCropHandle = 'bottom';
+
+                if (activeCropHandle) {
+                    saveState();
+                    return;
+                }
+            }
+        }
+
+        // 2. Resize Handle Check
+        if (!croppingMode && selectedGroup.length === 1) {
+            let img = selectedGroup[0];
+            let local = getLocalCoords(mx, my, img);
+            let m = 20; 
+            if ((local.x < m || local.x > img.w - m) && (local.y < m || local.y > img.h - m)) {
+                saveState();
+                isResizing = true;
+                resizeStartDist = Math.hypot(mx - (img.x + img.w/2), my - (img.y + img.h/2));
+                resizeStartW = img.w;
+                resizeStartH = img.h;
+                return;
+            }
+        }
+
+        // 3. Selection Hit Test
+        let hit = -1;
+        for (let i = images.length - 1; i >= 0; i--) {
+            let local = getLocalCoords(mx, my, images[i]);
+            if (local.x >= 0 && local.x <= images[i].w && local.y >= 0 && local.y <= images[i].h) {
+                hit = i;
+                break;
+            }
+        }
+
+        if (hit !== -1) {
+            saveState();
+            let clickedImg = images[hit];
+
+            if (croppingMode && !selectedGroup.includes(clickedImg)) toggleCrop();
+
+            if (!selectedGroup.includes(clickedImg)) {
+                if (!e.shiftKey) selectedGroup = [clickedImg];
+                else selectedGroup.push(clickedImg);
+            }
+            
+            // Bring clicked item to front
+            const pickedIndex = images.indexOf(clickedImg);
+            images.splice(pickedIndex, 1);
+            images.push(clickedImg);
+
+            // Group Cloning (Ctrl + Drag)
+            if (e.ctrlKey) {
+                cloningMode = true;
+                let newGroup = [];
+                selectedGroup.forEach(img => {
+                    let clone = img.clone();
+                    images.push(clone);
+                    newGroup.push(clone);
+                });
+                selectedGroup = newGroup;
+                cloneStartMX = mx;
+                cloneStartMY = my;
+                
+                dragOffsets = selectedGroup.map(img => ({ img: img, origX: img.x, origY: img.y }));
+                isDragging = true;
+            } else {
+                isDragging = true;
+                dragOffsets = selectedGroup.map(img => ({ img: img, offsetX: mx - img.x, offsetY: my - img.y }));
+            }
+        } else {
+            // Start Marquee Selection
+            if (croppingMode) toggleCrop();
+            selectedGroup = [];
+            marquee = { x: mx, y: my, w: 0, h: 0 };
+        }
+        render();
+    };
+
+    window.onmousemove = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        // Update Cursor
+        if (!isDragging && !isResizing && !activeCropHandle && !marquee && selectedGroup.length === 1) {
+            let img = selectedGroup[0];
+            let local = getLocalCoords(mx, my, img);
+            let m = 20;
+            if (croppingMode) {
+                if (local.x < m || local.x > img.w - m) canvas.style.cursor = "ew-resize";
+                else if (local.y < m || local.y > img.h - m) canvas.style.cursor = "ns-resize";
+                else canvas.style.cursor = "default";
+            } else {
+                if ((local.x < m || local.x > img.w - m) && (local.y < m || local.y > img.h - m)) canvas.style.cursor = "nwse-resize";
+                else if (local.x >= 0 && local.x <= img.w && local.y >= 0 && local.y <= img.h) canvas.style.cursor = "move";
+                else canvas.style.cursor = "default";
+            }
+        }
+
+        // Marquee Selection Draw
+        if (marquee) {
+            marquee.w = mx - marquee.x;
+            marquee.h = my - marquee.y;
+            render();
+            return;
+        }
+
+        // Edge Crop Drag
+        if (activeCropHandle && selectedGroup.length === 1) {
+            let img = selectedGroup[0];
+            let local = getLocalCoords(mx, my, img);
+            if (activeCropHandle === 'left') img.cropL = Math.max(0, Math.min(img.w - img.cropR - 20, local.x));
+            else if (activeCropHandle === 'right') img.cropR = Math.max(0, Math.min(img.w - img.cropL - 20, img.w - local.x));
+            else if (activeCropHandle === 'top') img.cropT = Math.max(0, Math.min(img.h - img.cropB - 20, local.y));
+            else if (activeCropHandle === 'bottom') img.cropB = Math.max(0, Math.min(img.h - img.cropT - 20, img.h - local.y));
+            render();
+            return;
+        }
+
+        // Scaling Drag
+        if (isResizing && selectedGroup.length === 1) {
+            let img = selectedGroup[0];
+            let currentDist = Math.hypot(mx - (img.x + img.w/2), my - (img.y + img.h/2));
+            if (resizeStartDist > 0) {
+                let ratio = currentDist / resizeStartDist;
+                let newW = resizeStartW * ratio;
+                let newH = resizeStartH * ratio;
+                if (newW > 20 && newH > 20) {
+                    img.x -= (newW - img.w) / 2;
+                    img.y -= (newH - img.h) / 2;
+                    img.w = newW;
+                    img.h = newH;
+                }
+            }
+            render();
+            return;
+        }
+
+        // Ctrl Clone (Straight Line Axis Snapping)
+        if (cloningMode && isDragging) {
+            let dx = mx - cloneStartMX;
+            let dy = my - cloneStartMY;
+            let snapHor = Math.abs(dx) > Math.abs(dy);
+            
+            dragOffsets.forEach(data => {
+                data.img.x = data.origX + (snapHor ? dx : 0);
+                data.img.y = data.origY + (snapHor ? 0 : dy);
+            });
+            render();
+            return;
+        }
+
+        // Group Drag
+        if (isDragging) {
+            dragOffsets.forEach(data => {
+                data.img.x = mx - data.offsetX;
+                data.img.y = my - data.offsetY;
+            });
+            render();
+        }
+    };
+
+    window.onmouseup = () => {
+        // Finalize Marquee Select
+        if (marquee) {
+            let rx = Math.min(marquee.x, marquee.x + marquee.w);
+            let ry = Math.min(marquee.y, marquee.y + marquee.h);
+            let rw = Math.abs(marquee.w);
+            let rh = Math.abs(marquee.h);
+
+            selectedGroup = [];
+            images.forEach(img => {
+                let b = getGlobalBounds(img);
+                if (b.x < rx + rw && b.x + b.w > rx && b.y < ry + rh && b.y + b.h > ry) {
+                    selectedGroup.push(img);
+                }
+            });
+            marquee = null;
+            render();
+            return;
+        }
+
+        // Finalize Geometric Edge Crop
+        if (activeCropHandle && selectedGroup.length === 1) {
+            let img = selectedGroup[0];
+            let scaleX = img.sw / img.w;
+            let scaleY = img.sh / img.h;
+
+            let physL = img.cropL * scaleX, physR = img.cropR * scaleX;
+            let physT = img.cropT * scaleY, physB = img.cropB * scaleY;
+
+            // Compute center shift geometrically to prevent rotated jumping
+            let dx = img.cropL + (img.w - img.cropL - img.cropR)/2 - img.w/2;
+            let dy = img.cropT + (img.h - img.cropT - img.cropB)/2 - img.h/2;
+            let rad = img.rotation * Math.PI / 180;
+            let gdx = dx * Math.cos(rad) - dy * Math.sin(rad);
+            let gdy = dx * Math.sin(rad) + dy * Math.cos(rad);
+            
+            let oldGlobalCx = img.x + img.w/2;
+            let oldGlobalCy = img.y + img.h/2;
+            let newGlobalCx = oldGlobalCx + gdx;
+            let newGlobalCy = oldGlobalCy + gdy;
+
+            img.sx += physL; img.sw -= (physL + physR);
+            img.sy += physT; img.sh -= (physT + physB);
+            img.w -= (img.cropL + img.cropR);
+            img.h -= (img.cropT + img.cropB);
+
+            img.x = newGlobalCx - img.w/2;
+            img.y = newGlobalCy - img.h/2;
+
+            img.cropL = img.cropR = img.cropT = img.cropB = 0;
+            activeCropHandle = null;
+            toggleCrop();
+            render();
+        }
+
+        isDragging = false;
+        isResizing = false;
+        cloningMode = false;
+    };
+
+    // Scroll Wheel Resizing for Group
+    canvas.addEventListener('wheel', (e) => {
+        if (selectedGroup.length > 0) {
+            const rect = canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            // Apply scale only if mouse is over one of the selected images
+            if (selectedGroup.some(img => img.contains(mx, my))) {
+                e.preventDefault();
+                if (!wheelTimeout) saveState();
+                clearTimeout(wheelTimeout);
+                wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 500);
+
+                let scale = e.deltaY < 0 ? 1.05 : 0.95;
+                selectedGroup.forEach(img => {
+                    let newW = img.w * scale;
+                    let newH = img.h * scale;
+                    if (newW > 20 && newH > 20) {
+                        img.x -= (newW - img.w) / 2;
+                        img.y -= (newH - img.h) / 2;
+                        img.w = newW;
+                        img.h = newH;
+                    }
+                });
+                render();
+            }
+        }
+    }, {passive: false});
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+        else if (e.ctrlKey && e.key === 'z') undo();
+    });
+
+    // --- Toolbar Tools ---
+    function rotateSelected() {
+        if (selectedGroup.length > 0) {
+            saveState();
+            selectedGroup.forEach(img => img.rotation = (img.rotation + 90) % 360);
+            render();
+        } else alert("Select photos first!");
+    }
+
+    function toggleCrop() {
+        if (selectedGroup.length !== 1) {
+            alert("Please select exactly ONE photo to crop.");
+            return;
+        }
+        croppingMode = !croppingMode;
+        const btn = document.getElementById('cropBtn');
+        if (croppingMode) {
+            btn.innerHTML = "🟩 DRAG EDGES INWARD";
+            btn.style.background = "#e91e63";
+        } else {
+            btn.innerHTML = "✂️ CROP";
+            btn.style.background = "#9c27b0";
+            activeCropHandle = null;
+        }
+        
+        // This ensures the canvas instantly shows the handles when you click "Crop"
+        render(); 
+    }
+
+    function deleteSelected() {
+        if (selectedGroup.length > 0) {
+            saveState();
+            images = images.filter(img => !selectedGroup.includes(img));
+            selectedGroup = [];
+            if (croppingMode) toggleCrop();
+            render();
+        }
+    }
+
+    function clearCanvas() {
+        if(images.length > 0 && confirm("Wipe the paper clean?")) {
+            saveState();
+            images = [];
+            selectedGroup = [];
+            if (croppingMode) toggleCrop();
+            render();
+        }
+    }
+
+    function triggerPrint() {
+        const prevSelection = [...selectedGroup];
+        const wasCropping = croppingMode;
+        
+        selectedGroup = [];
+        if (wasCropping) toggleCrop();
+        render();
+        
+        const printImg = document.getElementById('print-image');
+        printImg.src = canvas.toDataURL('image/png');
+        
+        printImg.onload = () => {
+            window.print();
+            selectedGroup = prevSelection;
+            if (wasCropping) toggleCrop();
+            render();
+        };
+    }
+
+    canvas.ondragover = (e) => e.preventDefault();
+    canvas.ondrop = (e) => {
+        e.preventDefault();
+        handleFiles(e.dataTransfer.files);
+    };
+</script>
 
 </body>
 </html>

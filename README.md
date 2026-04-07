@@ -1,26 +1,24 @@
 🎨 KIDS PHOTO PRINTING STUDIO
 
-The simplest way for kids to create, arrange, and print photo collages.
+The simplest, most intuitive way for kids to create and print photo collages on Windows and the Web.
 
-KIDS PHOTO PRINTING STUDIO is a lightweight, open-source Windows application designed specifically for children. Unlike Word or Photoshop, which can be frustrating with hidden layers and text-wrapping rules, this app provides a pure "blank paper" canvas.
-
-<img width="1919" height="739" alt="app-screenshot" src="https://github.com/user-attachments/assets/7aafbb9f-e5af-448c-af03-12e80c74239b" />
+KIDS PHOTO PRINTING STUDIO is an open-source application designed specifically for children. Unlike standard word processors or complex photo editors, this app provides a pure "blank paper" experience. There are no invisible text alignment rules or complicated layers to fight—just a canvas, some photos, and total creative freedom.
 
 
 🚀 Pro Features for Kids
 
 🛠️ Kid-Proof Interface
 
-Vertical A4 Canvas: Hardcoded to 794x1123 pixels for a perfect 1:1 mapping to physical A4 paper.
+Vertical A4 Canvas: Hardcoded to perfectly map to physical A4 paper.
 
 Contextual Toolbox: Buttons for Delete, Rotate, and Crop only appear when a photo is selected, keeping the UI clean and simple.
 
-Auto-Fit View: The app automatically zooms the paper to fit the height of your monitor perfectly.
+Visual Cues: Prominent blue resize handles and pink/white crop handles make it obvious how to interact with images.
 
 
 🖼️ Advanced Image Support
 
-Drag & Drop: Pull photos directly from Windows folders onto the paper.
+Drag & Drop: Pull photos directly from your folders onto the paper.
 
 Smart 4K Shrinking: Massive 4K and 8K photos are automatically resized to 500px on import, ensuring the app remains fast and responsive.
 
@@ -29,13 +27,13 @@ Smart 4K Shrinking: Massive 4K and 8K photos are automatically resized to 500px 
 
 ✂️ Creative Power Tools
 
-Ctrl + Drag to Clone: Hold the Ctrl key and drag an image to instantly create a copy.
+Marquee Multi-Select: Click and drag on the empty background to select multiple photos at once, just like dragging on your computer desktop!
 
-Straight Line Snapping: Cloned images automatically lock to a perfectly straight horizontal or vertical line.
+Group Operations: Move, scale, rotate, delete, or clone entire groups of photos together.
 
-Visual Crop: Click "Crop" and draw a box directly on the photo to trim it.
+Ctrl + Drag to Clone: Hold the Ctrl key and drag an image (or a group) to instantly create a copy. Snaps perfectly to straight horizontal or vertical lines.
 
-Mouse Wheel Scaling: Hover over a photo and scroll the wheel to grow or shrink it.
+Independent Edge Cropping: Click "Crop" and drag the prominent handles on the edges of the photo inward to trim each side independently.
 
 
 🧹 Canvas Reset: A dedicated broom button to wipe the paper clean in one click.
@@ -44,16 +42,22 @@ Mouse Wheel Scaling: Hover over a photo and scroll the wheel to grow or shrink i
 
 Unlimited Undo: Every single move, resize, crop, and delete is recorded.
 
-Keyboard Shortcuts: Full support for Ctrl + Z (Undo) and the Delete key.
+Keyboard Shortcuts: Full support for Ctrl + Z (Undo) and the Delete/Backspace keys.
 
-💻 Technical Requirements
+
+🌐 Live Web App
+
+Don't want to install anything? You can try out the fully functional web version directly in your browser!
+Launch the Web App Here --> [https://mnnbir.github.io/kids-photo-studio/](https://mnnbir.github.io/kids-photo-studio/)
+
+
+💻 Technical Requirements (Desktop Version)
 
 OS: Windows 10 or 11.
 
 Language: Python 3.x.
 
 Library: PyQt6.
-
 
 🛠️ Installation & Usage
 
