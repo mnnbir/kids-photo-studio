@@ -53,7 +53,7 @@ Library: PyQt6.
 
 🛠️ Installation & Usage
 Clone the repository:
-git clone [https://github.com/YOUR_USERNAME/kids-photo-studio.git](https://github.com/mnnbir/kids-photo-studio.git)
+git clone [https://github.com/YOUR_USERNAME/kids-photo-studio.git](https://github.com/mnnbir/kids-photo-studio.git).
 
 
 Install the required library:
